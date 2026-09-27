@@ -99,13 +99,21 @@ class DashboardViewModel(
             }
         }
 
-        // ── Total balance (reactive) ──
+        // ── Account balance (reactive) ──
         viewModelScope.launch {
-            retryTrigger.retryable { portfolioRepository.totalBalanceFlow() }.collect { result ->
+            retryTrigger.retryable { portfolioRepository.accountBalanceFlow() }.collect { result ->
                 when (result) {
                     is Result.Success -> {
                         totalBalanceError = null
-                        _state.update { it.copy(portfolioValue = formatFiat(result.data), error = combinedError()) }
+                        val balance = result.data
+                        _state.update {
+                            it.copy(
+                                totalValue = formatFiat(balance.total),
+                                cashBalance = formatFiat(balance.cash),
+                                holdingsValue = formatFiat(balance.holdings),
+                                error = combinedError(),
+                            )
+                        }
                     }
                     is Result.Error -> {
                         totalBalanceError = result.error.toUiText()

@@ -1,23 +1,41 @@
 package dev.kbwallet.app.chart.presentation.util
 
+import androidx.compose.runtime.Stable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.setValue
 import dev.kbwallet.app.chart.domain.model.CandleModel
 import kotlin.math.max
 
 /**
  * Maps between data space (candle index / price) and screen fractions (0..1).
  * Supports a visible sub-range for pan & zoom.
+ *
+ * The visible range is backed by snapshot state: the charts read it from inside
+ * a Canvas draw lambda, so a plain `var` would be mutated by a pan/zoom gesture
+ * without ever invalidating the draw — the gesture would be silently ignored.
  */
+@Stable
 class ChartTransform(
     val candles: List<CandleModel>,
-    private var _visibleStart: Float = 0f,
-    private var _visibleEnd: Float = 1f,
+    visibleStart: Float = 0f,
+    visibleEnd: Float = 1f,
 ) {
-    val visibleStartIdx: Int get() = (candles.size * _visibleStart).toInt().coerceIn(0, candles.lastIndex)
-    val visibleEndIdx: Int get() = (candles.size * _visibleEnd).toInt().coerceIn(visibleStartIdx + 1, candles.size)
+    private var _visibleStart by mutableFloatStateOf(visibleStart)
+    private var _visibleEnd by mutableFloatStateOf(visibleEnd)
+
+    val visibleStartIdx: Int
+        get() = if (candles.isEmpty()) 0
+        else (candles.size * _visibleStart).toInt().coerceIn(0, candles.lastIndex)
+
+    val visibleEndIdx: Int
+        get() = if (candles.isEmpty()) 0
+        else (candles.size * _visibleEnd).toInt().coerceIn(visibleStartIdx + 1, candles.size)
+
     val visibleCount: Int get() = max(1, visibleEndIdx - visibleStartIdx)
 
     val visibleCandles: List<CandleModel>
-        get() = candles.subList(visibleStartIdx, visibleEndIdx)
+        get() = if (candles.isEmpty()) emptyList() else candles.subList(visibleStartIdx, visibleEndIdx)
 
     val priceRange: ClosedFloatingPointRange<Double>
         get() {
@@ -25,7 +43,10 @@ class ChartTransform(
             if (vs.isEmpty()) return 0.0..1.0
             val high = vs.maxOf { it.high }
             val low = vs.minOf { it.low }
-            val pad = (high - low) * 0.05
+            // A perfectly flat window (high == low) would collapse the range to a
+            // single point and make priceToFraction() constant; fall back to a
+            // relative pad so the candles still land mid-chart.
+            val pad = if (high > low) (high - low) * 0.05 else max(high * 0.005, 0.5)
             return (low - pad)..(high + pad)
         }
 
@@ -44,10 +65,16 @@ class ChartTransform(
     }
 
     fun zoom(scaleFactor: Float, anchorFraction: Float) {
-        val newSpan = (span / scaleFactor).coerceIn(0.02f, 1f)
+        if (scaleFactor <= 0f) return
+        val newSpan = (span / scaleFactor).coerceIn(MIN_SPAN, 1f)
         val anchor = _visibleStart + anchorFraction * span
         _visibleStart = (anchor - anchorFraction * newSpan).coerceIn(0f, 1f - newSpan)
         _visibleEnd = _visibleStart + newSpan
+    }
+
+    fun reset() {
+        _visibleStart = 0f
+        _visibleEnd = 1f
     }
 
     fun indexToFraction(globalIndex: Int): Float {
@@ -69,5 +96,8 @@ class ChartTransform(
         return (volume / maxV).toFloat().coerceIn(0f, 1f)
     }
 
-    fun reset() { _visibleStart = 0f; _visibleEnd = 1f }
+    private companion object {
+        /** Never zoom in past ~5 candles' worth of the series. */
+        const val MIN_SPAN = 0.02f
+    }
 }

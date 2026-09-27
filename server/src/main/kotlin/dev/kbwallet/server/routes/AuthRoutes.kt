@@ -16,12 +16,14 @@ fun Route.authRouting() {
         post("/register") {
             val request = call.receive<RegisterRequest>()
 
-            // Validation
+            // Validation — email + password are the only hard requirements.
+            // Username, if provided, still has to look like a real handle;
+            // if omitted, one is generated below instead of rejecting the request.
             if (request.email.isBlank() || !request.email.contains("@")) {
                 call.respond(HttpStatusCode.BadRequest, ErrorResponse("invalid_email", "A valid email is required"))
                 return@post
             }
-            if (request.username.isBlank() || request.username.length < 3) {
+            if (request.username != null && request.username.length < 3) {
                 call.respond(HttpStatusCode.BadRequest, ErrorResponse("invalid_username", "Username must be at least 3 characters"))
                 return@post
             }
@@ -40,11 +42,13 @@ fun Route.authRouting() {
                 return@post
             }
 
+            val username = request.username ?: generateUsername(request.email)
+
             // Create user
             val passwordHash = hasher.hash(request.password)
             val user = User(
                 email = request.email,
-                username = request.username,
+                username = username,
                 passwordHash = passwordHash
             )
             val createdUser = userRepository.create(user)
@@ -134,4 +138,20 @@ fun Route.authRouting() {
             )
         }
     }
+}
+
+/**
+ * Derives a default handle from the email's local part when signup omits a
+ * username, e.g. "alex@example.com" -> "alex7421". Usernames aren't
+ * uniqueness-enforced at the DB level (unlike email) — this random 4-digit
+ * suffix makes a collision negligible without needing an extra repository
+ * lookup, appropriate for a cosmetic display name the user can change later.
+ */
+private fun generateUsername(email: String): String {
+    val localPart = email.substringBefore("@")
+        .filter { it.isLetterOrDigit() }
+        .take(16)
+        .ifEmpty { "user" }
+    val suffix = (1000..9999).random()
+    return "$localPart$suffix"
 }

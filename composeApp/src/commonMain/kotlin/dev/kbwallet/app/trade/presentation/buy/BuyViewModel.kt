@@ -7,6 +7,7 @@ import dev.kbwallet.app.core.domain.Result
 import dev.kbwallet.app.core.util.formatFiat
 import dev.kbwallet.app.core.util.toPlainAmountString
 import dev.kbwallet.app.core.util.toUiText
+import dev.kbwallet.app.notifications.domain.NotificationController
 import dev.kbwallet.app.portfolio.domain.PortfolioRepository
 import dev.kbwallet.app.trade.domain.BuyCoinUseCase
 import dev.kbwallet.app.trade.presentation.common.TradeState
@@ -26,6 +27,7 @@ class BuyViewModel(
     private val getCoinDetailsUseCase: GetCoinDetailsUseCase,
     private val portfolioRepository: PortfolioRepository,
     private val buyCoinUseCase: BuyCoinUseCase,
+    private val notificationController: NotificationController,
     private val coinId: String,
 ) : ViewModel() {
 
@@ -146,7 +148,22 @@ class BuyViewModel(
                 is Result.Success -> {
                     _amount.value = ""
                     _state.update { it.copy(isLoading = false, error = null) }
-                    _events.send(BuyEvents.BuySuccess)
+                    val amountInUnit = if (tradeCoin.price > 0) fiatAmount / tradeCoin.price else 0.0
+                    // Recorded before the event so the notification centre is
+                    // already up to date by the time the success screen offers
+                    // to jump to it.
+                    notificationController.postPurchase(
+                        coinSymbol = tradeCoin.symbol,
+                        amountInUnit = amountInUnit,
+                        amountInFiat = fiatAmount,
+                    )
+                    _events.send(
+                        BuyEvents.BuySuccess(
+                            coinSymbol = tradeCoin.symbol,
+                            amountInUnit = amountInUnit,
+                            amountInFiat = fiatAmount,
+                        )
+                    )
                 }
                 is Result.Error -> {
                     _state.update {
@@ -190,5 +207,14 @@ class BuyViewModel(
 }
 
 sealed interface BuyEvents {
-    data object BuySuccess : BuyEvents
+    /**
+     * Carries what was actually bought so the success animation can name it —
+     * the ViewModel has already cleared the amount field by the time the UI
+     * reacts, so the screen can't read it back off the state.
+     */
+    data class BuySuccess(
+        val coinSymbol: String,
+        val amountInUnit: Double,
+        val amountInFiat: Double,
+    ) : BuyEvents
 }

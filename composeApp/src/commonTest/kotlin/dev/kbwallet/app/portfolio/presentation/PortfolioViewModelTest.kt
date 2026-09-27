@@ -47,10 +47,10 @@ class PortfolioViewModelTest {
     }
 
     @Test
-    fun `Portfolio value updates when a coin is added`() = runTest {
+    fun `Total value updates when a coin is added`() = runTest {
         viewModel.state.test {
             val initialState = awaitItem()
-            assertEquals(initialState.portfolioValue, formatFiat(10000.0))
+            assertEquals(initialState.totalValue, formatFiat(10000.0))
 
             val portfolioCoin = FakePortfolioRepository.portfolioCoin.copy(
                 ownedAmountInUnit = 50.0,
@@ -58,7 +58,52 @@ class PortfolioViewModelTest {
             )
             portfolioRepository.savePortfolioCoin(portfolioCoin)
             val updatedState = awaitItem()
-            assertEquals(formatFiat(11000.0), updatedState.portfolioValue)
+            assertEquals(formatFiat(11000.0), updatedState.totalValue)
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
+
+    @Test
+    fun `cash and holdings are reported separately, not folded into one figure`() = runTest {
+        viewModel.state.test {
+            val initialState = awaitItem()
+            // Nothing bought yet: everything is cash, nothing is in assets.
+            assertEquals(formatFiat(10000.0), initialState.cashBalance)
+            assertEquals(formatFiat(0.0), initialState.holdingsValue)
+
+            portfolioRepository.savePortfolioCoin(
+                FakePortfolioRepository.portfolioCoin.copy(
+                    ownedAmountInUnit = 50.0,
+                    ownedAmountInFiat = 1000.0,
+                )
+            )
+            val updatedState = awaitItem()
+
+            assertEquals(formatFiat(10000.0), updatedState.cashBalance, "cash is untouched by the holding")
+            assertEquals(formatFiat(1000.0), updatedState.holdingsValue)
+            assertEquals(formatFiat(11000.0), updatedState.totalValue, "the total is the sum of the two")
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
+
+    @Test
+    fun `spending cash moves value from the cash balance into holdings`() = runTest {
+        viewModel.state.test {
+            awaitItem()
+
+            // What a purchase does: cash down, holdings up, total unchanged.
+            portfolioRepository.updateCashBalance(7500.0)
+            portfolioRepository.savePortfolioCoin(
+                FakePortfolioRepository.portfolioCoin.copy(
+                    ownedAmountInUnit = 25.0,
+                    ownedAmountInFiat = 2500.0,
+                )
+            )
+
+            val state = viewModel.state.value
+            assertEquals(formatFiat(7500.0), state.cashBalance)
+            assertEquals(formatFiat(2500.0), state.holdingsValue)
+            assertEquals(formatFiat(10000.0), state.totalValue)
             cancelAndIgnoreRemainingEvents()
         }
     }

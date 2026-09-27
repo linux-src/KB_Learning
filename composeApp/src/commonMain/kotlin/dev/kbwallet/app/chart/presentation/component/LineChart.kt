@@ -1,16 +1,14 @@
 package dev.kbwallet.app.chart.presentation.component
 
 import androidx.compose.foundation.Canvas
-import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.foundation.gestures.detectTransformGestures
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
-import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.graphics.drawscope.Stroke
@@ -23,17 +21,30 @@ fun LineChart(
     transform: ChartTransform,
     modifier: Modifier = Modifier,
     lineColor: Color = Color(0xFF00FF00),
-    chartArea: Float = 0.85f,
+    chartArea: Float = ChartPlotHeightFraction,
 ) {
     Canvas(
         modifier = modifier
             .fillMaxSize()
+            // Same pan/zoom as the candlestick view, so toggling between the two
+            // modes doesn't silently drop the gestures.
             .pointerInput(transform) {
-                detectTapGestures { /* no-op — clean look */ }
+                detectTransformGestures { centroid, pan, zoom, _ ->
+                    val chartWidth = size.width - ChartPriceAxisWidth.toPx()
+                    if (chartWidth <= 0f) return@detectTransformGestures
+                    transform.pan(-(pan.x / chartWidth))
+                    if (zoom != 1f) {
+                        transform.zoom(zoom, (centroid.x / chartWidth).coerceIn(0f, 1f))
+                    }
+                }
             }
     ) {
         val h = size.height * chartArea
-        val w = size.width
+        // Leave the price-axis gutter free, matching the candlestick chart —
+        // otherwise switching modes visibly rescales the x-axis.
+        val w = size.width - ChartPriceAxisWidth.toPx()
+        if (w <= 0f) return@Canvas
+
         val candles = transform.candles
         if (candles.isEmpty()) return@Canvas
 
@@ -57,7 +68,8 @@ fun LineChart(
 
         if (!started) return@Canvas
 
-        val lastX = transform.indexToFraction(transform.visibleEndIdx - 1) * w
+        val lastIdx = transform.visibleEndIdx - 1
+        val lastX = transform.indexToFraction(lastIdx) * w
 
         // ── Gradient fill under the line ──
         val fillPath = Path().apply {
@@ -92,30 +104,29 @@ fun LineChart(
             style = Stroke(width = 5.dp.toPx(), cap = StrokeCap.Round, join = StrokeJoin.Round),
         )
 
-        // ── Last price dot ──
-        val last = candles.last()
-        val lx = transform.indexToFraction(candles.size - 1) * w
+        // ── Last visible price dot ──
+        val last = candles[lastIdx]
         val ly = transform.priceToFraction(last.close) * h
-        drawCircle(Color.White, 4.dp.toPx(), Offset(lx, ly))
-        drawCircle(lineColor, 5.5.dp.toPx(), Offset(lx, ly), style = Stroke(1.5.dp.toPx()))
+        drawCircle(Color.White, 4.dp.toPx(), Offset(lastX, ly))
+        drawCircle(lineColor, 5.5.dp.toPx(), Offset(lastX, ly), style = Stroke(1.5.dp.toPx()))
 
         // ── Max / Min dots ──
-        val vis = transform.visibleCandles
-        if (vis.isNotEmpty()) {
-            val maxC = vis.maxBy { it.high }
-            val minC = vis.minBy { it.low }
-            val maxIdx = candles.indexOf(maxC)
-            val minIdx = candles.indexOf(minC)
-            if (maxIdx >= 0) {
-                val mx = transform.indexToFraction(maxIdx) * w
-                val my = transform.priceToFraction(maxC.high) * h
-                drawCircle(lineColor.copy(alpha = 0.3f), 3.dp.toPx(), Offset(mx, my))
-            }
-            if (minIdx >= 0) {
-                val mx = transform.indexToFraction(minIdx) * w
-                val my = transform.priceToFraction(minC.low) * h
-                drawCircle(Color(0xFFFF3B30).copy(alpha = 0.3f), 3.dp.toPx(), Offset(mx, my))
-            }
+        val visStart = transform.visibleStartIdx
+        var maxIdx = visStart
+        var minIdx = visStart
+        for (i in visStart..lastIdx) {
+            if (candles[i].high > candles[maxIdx].high) maxIdx = i
+            if (candles[i].low < candles[minIdx].low) minIdx = i
         }
+        drawCircle(
+            lineColor.copy(alpha = 0.3f),
+            3.dp.toPx(),
+            Offset(transform.indexToFraction(maxIdx) * w, transform.priceToFraction(candles[maxIdx].high) * h),
+        )
+        drawCircle(
+            Color(0xFFFF3B30).copy(alpha = 0.3f),
+            3.dp.toPx(),
+            Offset(transform.indexToFraction(minIdx) * w, transform.priceToFraction(candles[minIdx].low) * h),
+        )
     }
 }

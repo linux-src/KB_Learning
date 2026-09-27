@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -32,6 +33,8 @@ import kotlinx.coroutines.launch
 @Composable
 fun BiometricScreen(
     onSuccess: () -> Unit,
+    onCreateAccountClicked: () -> Unit = {},
+    onLoginWithAccountClicked: () -> Unit = {},
 ) {
     val platformContext = getPlatformContext()
     val biometricAuthenticator = remember { getBiometricAuthenticator(platformContext) }
@@ -85,6 +88,15 @@ fun BiometricScreen(
                     color = LocalKBLearningColorsPalette.current.lossRed,
                     fontSize = MaterialTheme.typography.labelSmall.fontSize,
                 )
+            }
+            Spacer(modifier = Modifier.height(24.dp))
+            // Biometric-only login has no account behind it at all — these give
+            // anyone without (or who doesn't want to use) biometrics a way in.
+            TextButton(onClick = onCreateAccountClicked) {
+                Text(strings.biometricCreateAccountPrompt, color = MaterialTheme.colorScheme.primary)
+            }
+            TextButton(onClick = onLoginWithAccountClicked) {
+                Text(strings.biometricLoginWithAccountPrompt, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
         }
 

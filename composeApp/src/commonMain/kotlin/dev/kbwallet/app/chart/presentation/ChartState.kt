@@ -16,5 +16,14 @@ data class ChartState(
     val currentPrice: Double = 0.0,
     val priceChange: Double = 0.0,
     val priceChangePercent: Double = 0.0,
-    val isCandlestickMode: Boolean = false,
-)
+    /** Candlesticks are the primary view — the line chart is the alternative. */
+    val isCandlestickMode: Boolean = true,
+    val showSma: Boolean = true,
+    val smaPeriod: Int = ChartViewModel.DEFAULT_SMA_PERIOD,
+    /** SMA value per candle index, `null` where the window isn't filled yet. */
+    val smaValues: List<Double?> = emptyList(),
+) {
+    /** Candle the OHLC readout describes: the tapped one, else the most recent. */
+    val focusedCandle: CandleModel?
+        get() = crosshairIndex?.let { candles.getOrNull(it) } ?: candles.lastOrNull()
+}

@@ -1,0 +1,44 @@
+# Local dev stack: Postgres + the KB Wallet server, both wired together with
+# zero manual setup. `docker compose up` gets you a real, persistent backend
+# without needing an actual deployment target — see server/Dockerfile and
+# server/src/main/resources/application.conf (DATABASE_ENABLED is what
+# switches the server off its in-memory fallback).
+#
+# All secrets below are dev-only placeholders (matching application.conf's
+# own dev defaults) — never reuse them for a real deployment.
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: kbwallet
+      POSTGRES_USER: kbwallet
+      POSTGRES_PASSWORD: kbwallet
+    ports:
+      - "5432:5432"
+    volumes:
+      - kbwallet-postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U kbwallet" ]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  server:
+    build:
+      context: .
+      dockerfile: server/Dockerfile
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      DATABASE_ENABLED: "true"
+      DATABASE_URL: "jdbc:postgresql://postgres:5432/kbwallet"
+      DATABASE_USER: "kbwallet"
+      DATABASE_PASSWORD: "kbwallet"
+      JWT_SECRET: "dev-only-insecure-secret-do-not-use-in-production"
+      CORS_ALLOWED_HOSTS: "localhost:8080,10.0.2.2:8080"
+    ports:
+      - "8080:8080"
+
+volumes:
+  kbwallet-postgres-data:

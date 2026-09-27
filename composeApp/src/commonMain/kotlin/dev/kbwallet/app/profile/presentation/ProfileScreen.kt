@@ -24,6 +24,7 @@ import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.Language
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Notifications
+import androidx.compose.material.icons.filled.Tune
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.TrendingUp
 import androidx.compose.material.icons.filled.Favorite
@@ -48,6 +49,7 @@ import org.koin.compose.viewmodel.koinViewModel
 fun ProfileScreen(
     onNavigateToEditProfile: () -> Unit,
     onNavigateToNotifications: () -> Unit,
+    onNavigateToNotificationCenter: () -> Unit = {},
     onNavigateToSecurity: () -> Unit,
     onNavigateToHelp: () -> Unit,
     onNavigateToSponsorship: () -> Unit,
@@ -160,6 +162,14 @@ fun ProfileScreen(
         item {
             ProfileMenuOption(
                 icon = Icons.Default.Notifications,
+                title = strings.profileMenuNotificationCenterTitle,
+                subtitle = strings.profileMenuNotificationCenterSubtitle,
+                onClick = onNavigateToNotificationCenter,
+            )
+        }
+        item {
+            ProfileMenuOption(
+                icon = Icons.Default.Tune,
                 title = strings.profileMenuNotificationsTitle,
                 subtitle = strings.profileMenuNotificationsSubtitle,
                 onClick = onNavigateToNotifications,

@@ -7,8 +7,11 @@ import kotlinx.serialization.Serializable
 @Serializable
 data class RegisterRequest(
     val email: String,
-    val username: String,
-    val password: String
+    val password: String,
+    // Everything below is optional at signup — a real display name, avatar,
+    // and bio can always be filled in later from the profile screen. Keeping
+    // signup to just email+password lowers the barrier for a first account.
+    val username: String? = null,
 )
 
 @Serializable

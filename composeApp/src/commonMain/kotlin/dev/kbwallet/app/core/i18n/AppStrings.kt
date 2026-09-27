@@ -66,6 +66,19 @@ interface AppStrings {
     val notifNewsTitle: String
     val notifNewsSubtitle: String
 
+    // ── Notification centre & trade feedback ──
+    val profileMenuNotificationCenterTitle: String
+    val profileMenuNotificationCenterSubtitle: String
+    val notifCenterEmptyTitle: String
+    val notifCenterEmptySubtitle: String
+    val notifCenterMarkAllRead: String
+    val notifCenterClearAll: String
+    val notifSystemBlockedTitle: String
+    val notifSystemBlockedAction: String
+    val notifPurchaseTitle: String
+    fun notifPurchaseBody(amount: String, total: String): String
+    fun tradeSuccessSubtitle(amount: String): String
+
     // ── Security settings screen ──
     val securityTitle: String
     val sectionAuthentication: String
@@ -109,6 +122,8 @@ interface AppStrings {
     // ── Dashboard screen ──
     val dashboardTitle: String
     val dashboardSimulatorButton: String
+    val dashboardStatTotalBalance: String
+    val dashboardStatCash: String
     val dashboardStatPortfolioValue: String
     val dashboardStatAssets: String
     val dashboardStat24hChange: String
@@ -125,6 +140,8 @@ interface AppStrings {
     // ── Portfolio screen ──
     val portfolioTitle: String
     val portfolioBalanceLabel: String
+    val portfolioCashLabel: String
+    val portfolioHoldingsLabel: String
     val portfolioDiscoverCoinsButton: String
     val portfolioSearchPlaceholder: String
     val portfolioDistributionTitle: String
@@ -228,6 +245,23 @@ interface AppStrings {
     val biometricLoginButton: String
     val biometricNotAvailable: String
     val biometricDisclaimer: String
+    val biometricCreateAccountPrompt: String
+    val biometricLoginWithAccountPrompt: String
+
+    // ── Register / Login (email+password account, server-backed) ──
+    val authRegisterTitle: String
+    val authLoginTitle: String
+    val authEmailLabel: String
+    val authPasswordLabel: String
+    val authUsernameOptionalLabel: String
+    val authRegisterButton: String
+    val authLoginButton: String
+    val authSwitchToLoginPrompt: String
+    val authSwitchToRegisterPrompt: String
+    val authBackToBiometricPrompt: String
+    val authErrorGeneric: String
+    val authErrorInvalidInput: String
+    val authErrorEmailExists: String
 
     // ── Bottom navigation ──
     val navDashboard: String
@@ -297,6 +331,18 @@ private object EnStrings : AppStrings {
     override val notifNewsTitle = "News & Updates"
     override val notifNewsSubtitle = "Stay informed with latest news"
 
+    override val profileMenuNotificationCenterTitle = "Notification Centre"
+    override val profileMenuNotificationCenterSubtitle = "Trade confirmations and alerts"
+    override val notifCenterEmptyTitle = "No notifications yet"
+    override val notifCenterEmptySubtitle = "Trade confirmations and alerts will show up here"
+    override val notifCenterMarkAllRead = "Mark all read"
+    override val notifCenterClearAll = "Clear all"
+    override val notifSystemBlockedTitle = "System notifications are turned off"
+    override val notifSystemBlockedAction = "Enable"
+    override val notifPurchaseTitle = "Purchase complete"
+    override fun notifPurchaseBody(amount: String, total: String) = "Bought $amount for $total"
+    override fun tradeSuccessSubtitle(amount: String) = "$amount added to your portfolio"
+
     override val securityTitle = "Security"
     override val sectionAuthentication = "Authentication"
     override val securityBiometricTitle = "Biometric Authentication"
@@ -336,7 +382,9 @@ private object EnStrings : AppStrings {
 
     override val dashboardTitle = "Dashboard"
     override val dashboardSimulatorButton = "Simulator"
-    override val dashboardStatPortfolioValue = "Portfolio Value"
+    override val dashboardStatTotalBalance = "Total Balance"
+    override val dashboardStatCash = "Cash"
+    override val dashboardStatPortfolioValue = "In Assets"
     override val dashboardStatAssets = "Assets"
     override val dashboardStat24hChange = "24h Change"
     override val dashboardMarketOverview = "Market Overview"
@@ -350,7 +398,9 @@ private object EnStrings : AppStrings {
     override fun dashboardAssetsCount(count: Int) = "$count asset(s) in portfolio"
 
     override val portfolioTitle = "Portfolio"
-    override val portfolioBalanceLabel = "Your Portfolio Balance"
+    override val portfolioBalanceLabel = "Total Balance"
+    override val portfolioCashLabel = "Cash"
+    override val portfolioHoldingsLabel = "In assets"
     override val portfolioDiscoverCoinsButton = "Discover Coins"
     override val portfolioSearchPlaceholder = "Search coins..."
     override val portfolioDistributionTitle = "Portfolio Distribution"
@@ -446,6 +496,22 @@ private object EnStrings : AppStrings {
     override val biometricLoginButton = "Login"
     override val biometricNotAvailable = "Biometric is not available on your device!"
     override val biometricDisclaimer = "This app is for educational purposes only and does not constitute financial advice. Cryptocurrency investments carry risk — do your own research."
+    override val biometricCreateAccountPrompt = "No biometrics? Create an account"
+    override val biometricLoginWithAccountPrompt = "Already have an account? Log in"
+
+    override val authRegisterTitle = "Create your account"
+    override val authLoginTitle = "Log in"
+    override val authEmailLabel = "Email"
+    override val authPasswordLabel = "Password"
+    override val authUsernameOptionalLabel = "Username (optional)"
+    override val authRegisterButton = "Create account"
+    override val authLoginButton = "Log in"
+    override val authSwitchToLoginPrompt = "Already have an account? Log in"
+    override val authSwitchToRegisterPrompt = "Don't have an account? Create one"
+    override val authBackToBiometricPrompt = "Back to biometric login"
+    override val authErrorGeneric = "Something went wrong. Check your details and try again."
+    override val authErrorInvalidInput = "Enter a valid email and a password of at least 6 characters."
+    override val authErrorEmailExists = "An account with this email already exists."
 
     override val navDashboard = "Dashboard"
     override val navPortfolio = "Portfolio"
@@ -513,6 +579,18 @@ private object RuStrings : AppStrings {
     override val notifNewsTitle = "Новости и обновления"
     override val notifNewsSubtitle = "Быть в курсе последних новостей"
 
+    override val profileMenuNotificationCenterTitle = "Центр уведомлений"
+    override val profileMenuNotificationCenterSubtitle = "Подтверждения сделок и оповещения"
+    override val notifCenterEmptyTitle = "Уведомлений пока нет"
+    override val notifCenterEmptySubtitle = "Здесь появятся подтверждения сделок и оповещения"
+    override val notifCenterMarkAllRead = "Отметить прочитанными"
+    override val notifCenterClearAll = "Очистить"
+    override val notifSystemBlockedTitle = "Системные уведомления отключены"
+    override val notifSystemBlockedAction = "Включить"
+    override val notifPurchaseTitle = "Покупка совершена"
+    override fun notifPurchaseBody(amount: String, total: String) = "Куплено $amount на $total"
+    override fun tradeSuccessSubtitle(amount: String) = "$amount добавлено в портфель"
+
     override val securityTitle = "Безопасность"
     override val sectionAuthentication = "Аутентификация"
     override val securityBiometricTitle = "Биометрическая аутентификация"
@@ -552,7 +630,9 @@ private object RuStrings : AppStrings {
 
     override val dashboardTitle = "Главная"
     override val dashboardSimulatorButton = "Симулятор"
-    override val dashboardStatPortfolioValue = "Стоимость портфеля"
+    override val dashboardStatTotalBalance = "Общий баланс"
+    override val dashboardStatCash = "Свободные средства"
+    override val dashboardStatPortfolioValue = "В активах"
     override val dashboardStatAssets = "Активы"
     override val dashboardStat24hChange = "Изменение за 24ч"
     override val dashboardMarketOverview = "Обзор рынка"
@@ -566,7 +646,9 @@ private object RuStrings : AppStrings {
     override fun dashboardAssetsCount(count: Int) = "Активов в портфеле: $count"
 
     override val portfolioTitle = "Портфель"
-    override val portfolioBalanceLabel = "Баланс вашего портфеля"
+    override val portfolioBalanceLabel = "Общий баланс"
+    override val portfolioCashLabel = "Свободные средства"
+    override val portfolioHoldingsLabel = "В активах"
     override val portfolioDiscoverCoinsButton = "Найти монеты"
     override val portfolioSearchPlaceholder = "Поиск монет..."
     override val portfolioDistributionTitle = "Распределение портфеля"
@@ -662,6 +744,22 @@ private object RuStrings : AppStrings {
     override val biometricLoginButton = "Войти"
     override val biometricNotAvailable = "Биометрия недоступна на вашем устройстве!"
     override val biometricDisclaimer = "Это приложение создано в образовательных целях и не является финансовой консультацией. Инвестиции в криптовалюту сопряжены с риском — проводите собственное исследование."
+    override val biometricCreateAccountPrompt = "Нет биометрии? Создать аккаунт"
+    override val biometricLoginWithAccountPrompt = "Уже есть аккаунт? Войти"
+
+    override val authRegisterTitle = "Создайте аккаунт"
+    override val authLoginTitle = "Вход"
+    override val authEmailLabel = "Email"
+    override val authPasswordLabel = "Пароль"
+    override val authUsernameOptionalLabel = "Имя пользователя (необязательно)"
+    override val authRegisterButton = "Создать аккаунт"
+    override val authLoginButton = "Войти"
+    override val authSwitchToLoginPrompt = "Уже есть аккаунт? Войти"
+    override val authSwitchToRegisterPrompt = "Нет аккаунта? Создать"
+    override val authBackToBiometricPrompt = "Назад ко входу по биометрии"
+    override val authErrorGeneric = "Что-то пошло не так. Проверьте данные и попробуйте снова."
+    override val authErrorInvalidInput = "Введите корректный email и пароль не короче 6 символов."
+    override val authErrorEmailExists = "Аккаунт с таким email уже существует."
 
     override val navDashboard = "Главная"
     override val navPortfolio = "Портфель"
@@ -676,11 +774,16 @@ private object RuStrings : AppStrings {
     override val libraryLevelAdvanced = "Продвинутый"
 }
 
-@Composable
-fun appStrings(): AppStrings {
-    val language = LocalAppLanguage.current
-    return when (language) {
-        AppLanguage.RUSSIAN -> RuStrings
-        AppLanguage.ENGLISH -> EnStrings
-    }
+/**
+ * Catalog lookup outside the composition — for layers that have to produce user
+ * copy without a Composable scope (notifications posted from a ViewModel or the
+ * OS notifier). Inside the UI use [appStrings] instead, so the text recomposes
+ * when the language changes.
+ */
+fun stringsFor(language: AppLanguage): AppStrings = when (language) {
+    AppLanguage.RUSSIAN -> RuStrings
+    AppLanguage.ENGLISH -> EnStrings
 }
+
+@Composable
+fun appStrings(): AppStrings = stringsFor(LocalAppLanguage.current)

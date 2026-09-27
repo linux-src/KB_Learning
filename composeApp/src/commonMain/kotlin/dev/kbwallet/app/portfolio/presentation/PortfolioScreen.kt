@@ -164,11 +164,31 @@ private fun PortfolioContent(
                     )
                     Spacer(modifier = Modifier.height(8.dp))
                     Text(
-                        text = state.portfolioValue,
+                        text = state.totalValue,
                         fontSize = 32.sp,
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.onBackground,
                     )
+
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    // The headline above is cash + holdings; without this split
+                    // there was no way to tell how much of it is still
+                    // spendable and how much is tied up in coins.
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceEvenly,
+                    ) {
+                        BalanceBreakdownItem(
+                            label = strings.portfolioCashLabel,
+                            value = state.cashBalance,
+                        )
+                        BalanceBreakdownItem(
+                            label = strings.portfolioHoldingsLabel,
+                            value = state.holdingsValue,
+                        )
+                    }
+
                     Spacer(modifier = Modifier.height(16.dp))
                     Button(
                         onClick = onDiscoverCoinsClicked,
@@ -473,5 +493,30 @@ private fun PortfolioEmptySection(
                 Text(text = strings.portfolioDiscoverCoinsButton)
             }
         }
+    }
+}
+
+/**
+ * One half of the balance headline's breakdown — cash on the left, holdings on
+ * the right, so the total above is visibly the sum of two separate things.
+ */
+@Composable
+private fun BalanceBreakdownItem(
+    label: String,
+    value: String,
+) {
+    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+        Text(
+            text = label,
+            color = SubtextGray,
+            fontSize = 11.sp,
+        )
+        Spacer(modifier = Modifier.height(2.dp))
+        Text(
+            text = value,
+            fontSize = 16.sp,
+            fontWeight = FontWeight.SemiBold,
+            color = MaterialTheme.colorScheme.onBackground,
+        )
     }
 }

@@ -21,6 +21,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.navigation.NavHostController
@@ -31,6 +32,8 @@ import androidx.navigation.toRoute
 import dev.kbwallet.app.analytics.presentation.PnLScreen
 import dev.kbwallet.app.chart.presentation.CryptoChartScreen
 import dev.kbwallet.app.coins.presentation.CoinListScreen
+import dev.kbwallet.app.core.auth.presentation.LoginScreen
+import dev.kbwallet.app.core.auth.presentation.RegisterScreen
 import dev.kbwallet.app.core.biometric.BiometricScreen
 import dev.kbwallet.app.core.navigation.ActiveOrders
 import dev.kbwallet.app.core.navigation.Biometric
@@ -41,10 +44,13 @@ import dev.kbwallet.app.core.navigation.EditProfile
 import dev.kbwallet.app.core.navigation.HelpSupport
 import dev.kbwallet.app.core.navigation.History
 import dev.kbwallet.app.core.navigation.LanguageSettings
+import dev.kbwallet.app.core.navigation.Login
+import dev.kbwallet.app.core.navigation.NotificationCenter
 import dev.kbwallet.app.core.navigation.NotificationSettings
 import dev.kbwallet.app.core.navigation.PnLAnalytics
 import dev.kbwallet.app.core.navigation.Portfolio
 import dev.kbwallet.app.core.navigation.Profile
+import dev.kbwallet.app.core.navigation.Register
 import dev.kbwallet.app.core.navigation.SecuritySettings
 import dev.kbwallet.app.core.navigation.Simulator
 import dev.kbwallet.app.core.navigation.Sponsorship
@@ -62,6 +68,8 @@ import dev.kbwallet.app.portfolio.presentation.PortfolioScreen
 import dev.kbwallet.app.profile.presentation.EditProfileScreen
 import dev.kbwallet.app.profile.presentation.HelpSupportScreen
 import dev.kbwallet.app.profile.presentation.LanguageSettingsScreen
+import dev.kbwallet.app.notifications.presentation.NotificationCenterScreen
+import dev.kbwallet.app.notifications.presentation.component.InAppNotificationHost
 import dev.kbwallet.app.profile.presentation.NotificationSettingsScreen
 import dev.kbwallet.app.profile.presentation.ProfileScreen
 import dev.kbwallet.app.profile.presentation.SecuritySettingsScreen
@@ -106,6 +114,10 @@ fun App() {
             modifier = Modifier.fillMaxSize(),
             color = MaterialTheme.colorScheme.background,
         ) {
+        // The in-app banner sits above the NavHost rather than inside any one
+        // screen, so a notification raised on the trade sheet still shows after
+        // the sheet closes and the user has navigated on.
+        Box(modifier = Modifier.fillMaxSize()) {
         NavHost(
             navController = navController,
             startDestination = Biometric,
@@ -113,11 +125,43 @@ fun App() {
         ) {
             // ── Biometric entry ──
             composable<Biometric> {
-                BiometricScreen {
-                    navController.navigate(Portfolio) {
-                        popUpTo(Biometric) { inclusive = true }
-                    }
-                }
+                BiometricScreen(
+                    onSuccess = {
+                        navController.navigate(Portfolio) {
+                            popUpTo(Biometric) { inclusive = true }
+                        }
+                    },
+                    onCreateAccountClicked = { navController.navigate(Register) },
+                    onLoginWithAccountClicked = { navController.navigate(Login) },
+                )
+            }
+
+            // ── Register / Login (email+password account, no biometrics needed) ──
+            composable<Register> {
+                RegisterScreen(
+                    onSuccess = {
+                        navController.navigate(Portfolio) {
+                            popUpTo(Biometric) { inclusive = true }
+                        }
+                    },
+                    onSwitchToLogin = {
+                        navController.navigate(Login) { popUpTo(Register) { inclusive = true } }
+                    },
+                    onBack = { navController.popBackStack() },
+                )
+            }
+            composable<Login> {
+                LoginScreen(
+                    onSuccess = {
+                        navController.navigate(Portfolio) {
+                            popUpTo(Biometric) { inclusive = true }
+                        }
+                    },
+                    onSwitchToRegister = {
+                        navController.navigate(Register) { popUpTo(Login) { inclusive = true } }
+                    },
+                    onBack = { navController.popBackStack() },
+                )
             }
 
             // ── Main scaffold with tabs ──
@@ -163,6 +207,11 @@ fun App() {
             }
             composable<NotificationSettings> {
                 NotificationSettingsScreen(
+                    onNavigateBack = { navController.popBackStack() }
+                )
+            }
+            composable<NotificationCenter> {
+                NotificationCenterScreen(
                     onNavigateBack = { navController.popBackStack() }
                 )
             }
@@ -214,6 +263,12 @@ fun App() {
                     onBack = { navController.popBackStack() },
                 )
             }
+        }
+
+        InAppNotificationHost(
+            modifier = Modifier.align(Alignment.TopCenter),
+            onBannerClicked = { navController.navigate(NotificationCenter) },
+        )
         }
         }
     }
@@ -295,6 +350,9 @@ private fun MainScaffold(navController: NavHostController) {
                     },
                     onNavigateToNotifications = {
                         navController.navigate(NotificationSettings)
+                    },
+                    onNavigateToNotificationCenter = {
+                        navController.navigate(NotificationCenter)
                     },
                     onNavigateToSecurity = {
                         navController.navigate(SecuritySettings)

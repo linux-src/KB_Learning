@@ -1,5 +1,9 @@
 package dev.kbwallet.server.plugins
 
+import dev.kbwallet.server.data.DatabaseConfig
+import dev.kbwallet.server.data.DatabaseFactory
+import dev.kbwallet.server.data.ExposedUserRepository
+import dev.kbwallet.server.data.InMemoryUserRepository
 import dev.kbwallet.server.data.UserRepository
 import dev.kbwallet.server.security.PasswordHasher
 import dev.kbwallet.server.security.TokenConfig
@@ -76,7 +80,25 @@ fun Application.configureDependencies() {
     val iterations = environment.config.property("password.iterations").getString().toInt()
     val keyLength = environment.config.property("password.keyLength").getString().toInt()
 
-    attributes.put(UserRepositoryKey, UserRepository())
+    val databaseEnabled = environment.config.propertyOrNull("database.enabled")?.getString().toBoolean()
+    val userRepository: UserRepository = if (databaseEnabled) {
+        val dbConfig = DatabaseConfig(
+            jdbcUrl = environment.config.property("database.url").getString(),
+            user = environment.config.property("database.user").getString(),
+            password = environment.config.property("database.password").getString(),
+        )
+        DatabaseFactory.connect(dbConfig)
+        ExposedUserRepository()
+    } else {
+        log.warn(
+            "database.enabled is false — using InMemoryUserRepository, all user " +
+                "data will be LOST on restart. Set DATABASE_ENABLED=true (and " +
+                "DATABASE_URL/_USER/_PASSWORD) for real/persistent usage."
+        )
+        InMemoryUserRepository()
+    }
+
+    attributes.put(UserRepositoryKey, userRepository)
     attributes.put(PasswordHasherKey, PasswordHasher(iterations, keyLength))
 }
 

@@ -52,3 +52,26 @@ jobs:
       # the java-version set up above.
       - name: Build and test server module
         run: ./gradlew :server:test --console=plain
+
+  docker-build:
+    name: Server Docker build (sanity check, not pushed)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      # Build-only, no push — release.yml's server-docker job does the real
+      # push to GHCR on a version tag. This just catches a broken
+      # server/Dockerfile (or a server change it can't build) on every PR,
+      # instead of only discovering that at release time.
+      - name: Build server image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: server/Dockerfile
+          push: false
+          cache-from: type=gha
+          cache-to: type=gha,mode=max

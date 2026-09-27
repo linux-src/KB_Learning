@@ -11,36 +11,43 @@ class AuthApiClient(
     private val httpClient: HttpClient,
     private val baseUrl: String = "http://10.0.2.2:8080" // Android emulator -> host
 ) {
-    suspend fun register(email: String, username: String, password: String): Result<AuthResponse, DataError> {
+    /**
+     * [username] is optional — the server derives a default handle from the
+     * email when omitted, so registration only ever strictly needs an
+     * email+password. Anything else (username, avatar, bio) can be set later
+     * from the profile screen.
+     */
+    suspend fun register(email: String, password: String, username: String? = null): Result<AuthResponse, AuthError> {
         return try {
             val response = httpClient.post("$baseUrl/api/auth/register") {
                 contentType(ContentType.Application.Json)
-                setBody(RegisterRequest(email, username, password))
+                setBody(RegisterRequest(email = email, password = password, username = username))
             }
-            if (response.status == HttpStatusCode.Created) {
-                Result.Success(response.body<AuthResponse>())
-            } else {
-                val error = try { response.body<ApiError>() } catch (_: Exception) { null }
-                Result.Error(DataError.Remote.SERVER)
+            when (response.status) {
+                HttpStatusCode.Created -> Result.Success(response.body<AuthResponse>())
+                HttpStatusCode.Conflict -> Result.Error(AuthError.EMAIL_EXISTS)
+                HttpStatusCode.BadRequest -> Result.Error(AuthError.INVALID_INPUT)
+                else -> Result.Error(AuthError.NETWORK)
             }
         } catch (e: Exception) {
-            Result.Error(mapNetworkException(e))
+            Result.Error(AuthError.NETWORK)
         }
     }
 
-    suspend fun login(email: String, password: String): Result<AuthResponse, DataError> {
+    suspend fun login(email: String, password: String): Result<AuthResponse, AuthError> {
         return try {
             val response = httpClient.post("$baseUrl/api/auth/login") {
                 contentType(ContentType.Application.Json)
                 setBody(LoginRequest(email, password))
             }
-            if (response.status == HttpStatusCode.OK) {
-                Result.Success(response.body<AuthResponse>())
-            } else {
-                Result.Error(DataError.Remote.SERVER)
+            when (response.status) {
+                HttpStatusCode.OK -> Result.Success(response.body<AuthResponse>())
+                HttpStatusCode.Unauthorized -> Result.Error(AuthError.INVALID_CREDENTIALS)
+                HttpStatusCode.BadRequest -> Result.Error(AuthError.INVALID_INPUT)
+                else -> Result.Error(AuthError.NETWORK)
             }
         } catch (e: Exception) {
-            Result.Error(mapNetworkException(e))
+            Result.Error(AuthError.NETWORK)
         }
     }
 

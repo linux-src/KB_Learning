@@ -7,6 +7,8 @@ import dev.kbwallet.app.history.data.LimitOrderDao
 import dev.kbwallet.app.history.data.LimitOrderEntity
 import dev.kbwallet.app.history.data.TransactionDao
 import dev.kbwallet.app.history.data.TransactionEntity
+import dev.kbwallet.app.notifications.data.NotificationDao
+import dev.kbwallet.app.notifications.data.NotificationEntity
 import dev.kbwallet.app.portfolio.data.local.PortfolioCoinEntity
 import dev.kbwallet.app.portfolio.data.local.PortfolioDao
 import dev.kbwallet.app.portfolio.data.local.UserBalanceDao
@@ -32,8 +34,9 @@ import dev.kbwallet.app.watchlist.data.WatchlistEntity
         TransactionEntity::class,
         LimitOrderEntity::class,
         WatchlistEntity::class,
+        NotificationEntity::class,
     ],
-    version = 7
+    version = 8
 )
 abstract class AppDatabase: RoomDatabase() {
     abstract fun portfolioDao(): PortfolioDao
@@ -41,4 +44,5 @@ abstract class AppDatabase: RoomDatabase() {
     abstract fun transactionDao(): TransactionDao
     abstract fun limitOrderDao(): LimitOrderDao
     abstract fun watchlistDao(): WatchlistDao
+    abstract fun notificationDao(): NotificationDao
 }

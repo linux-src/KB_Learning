@@ -122,6 +122,28 @@ private fun DashboardContent(
             }
         }
 
+        // ── Balance Row ──
+        // The two money figures get a row of their own: the top card used to be
+        // labelled "Portfolio Value" while actually showing cash + holdings,
+        // and the cash had no card at all.
+        item {
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                modifier = Modifier.fillMaxWidth().height(IntrinsicSize.Max)
+            ) {
+                StatCard(
+                    title = strings.dashboardStatTotalBalance,
+                    value = state.totalValue,
+                    modifier = Modifier.weight(1f)
+                )
+                StatCard(
+                    title = strings.dashboardStatCash,
+                    value = state.cashBalance,
+                    modifier = Modifier.weight(1f)
+                )
+            }
+        }
+
         // ── Stats Row ──
         item {
             Row(
@@ -130,7 +152,7 @@ private fun DashboardContent(
             ) {
                 StatCard(
                     title = strings.dashboardStatPortfolioValue,
-                    value = state.portfolioValue,
+                    value = state.holdingsValue,
                     modifier = Modifier.weight(1f)
                 )
                 StatCard(

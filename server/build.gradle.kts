@@ -36,6 +36,15 @@ dependencies {
     // Coroutines
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.9.0")
 
+    // Database — Postgres via Exposed (JetBrains' SQL DSL, coroutine-friendly)
+    // + HikariCP for connection pooling. Replaces the old in-memory
+    // UserRepository (data was wiped on every restart/redeploy).
+    implementation("org.jetbrains.exposed:exposed-core:0.55.0")
+    implementation("org.jetbrains.exposed:exposed-dao:0.55.0")
+    implementation("org.jetbrains.exposed:exposed-jdbc:0.55.0")
+    implementation("org.postgresql:postgresql:42.7.4")
+    implementation("com.zaxxer:HikariCP:5.1.0")
+
     // Logging
     implementation("ch.qos.logback:logback-classic:1.5.6")
 

@@ -1,0 +1,12 @@
+# Keeps the Docker build context small — server/Dockerfile's COPY . . would
+# otherwise drag in .git history, every module's build/ output, and local
+# Gradle/IDE caches, which is both slow to send to the daemon and can leak
+# local.properties (API keys) into an image layer.
+.git/
+.gradle/
+.kotlin/
+**/build/
+.idea/
+*.iml
+local.properties
+keystore.properties

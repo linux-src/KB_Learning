@@ -15,8 +15,13 @@ interface PortfolioRepository {
     suspend fun savePortfolioCoin(portfolioCoin: PortfolioCoinModel): EmptyResult<DataError.Local>
     suspend fun removeCoinFromPortfolio(coinId: String)
 
+    /** Market value of the holdings alone — no cash. */
     fun calculateTotalPortfolioValue(): Flow<Result<Double, DataError.Remote>>
-    fun totalBalanceFlow(): Flow<Result<Double, DataError.Remote>>
+
+    /** Cash and holdings side by side; see [AccountBalance]. */
+    fun accountBalanceFlow(): Flow<Result<AccountBalance, DataError.Remote>>
+
+    /** Spendable fiat only. */
     fun cashBalanceFlow(): Flow<Double>
     suspend fun updateCashBalance(newBalance: Double)
 
