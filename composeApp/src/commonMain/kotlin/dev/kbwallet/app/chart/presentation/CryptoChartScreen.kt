@@ -1,6 +1,8 @@
 package dev.kbwallet.app.chart.presentation
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -41,9 +43,12 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import dev.kbwallet.app.core.i18n.appStrings
+import dev.kbwallet.app.chart.domain.model.CandleModel
+import dev.kbwallet.app.chart.domain.model.isBullish
 import dev.kbwallet.app.chart.presentation.component.CandlestickChart
 import dev.kbwallet.app.chart.presentation.component.ChartGrid
 import dev.kbwallet.app.chart.presentation.component.LineChart
+import dev.kbwallet.app.chart.presentation.component.SMAOverlay
 import dev.kbwallet.app.chart.presentation.component.TimeRangeSelector
 import dev.kbwallet.app.chart.presentation.util.ChartFormatters
 import dev.kbwallet.app.chart.presentation.util.ChartTransform
@@ -55,6 +60,8 @@ import dev.kbwallet.app.trade.presentation.common.TradeType
 import dev.kbwallet.app.trade.presentation.sell.SellScreen
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.viewmodel.koinViewModel
+
+private val SmaColor = Color(0xFFFFA500)
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -126,39 +133,60 @@ fun CryptoChartScreen(
 
             Spacer(Modifier.padding(vertical = 4.dp))
 
-            // ── Time range selector + Chart mode toggle ──
+            // ── Time range selector ──
+            TimeRangeSelector(
+                selected = state.selectedRange,
+                onSelect = { viewModel.selectTimeRange(it) },
+            )
+
+            Spacer(Modifier.padding(vertical = 4.dp))
+
+            // ── Chart mode + indicators ──
+            // Candles lead: they're the primary view, the line chart is the
+            // simplified alternative.
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
             ) {
-                TimeRangeSelector(
-                    selected = state.selectedRange,
-                    onSelect = { viewModel.selectTimeRange(it) },
-                    modifier = Modifier.weight(1f),
-                )
-
-                // Candlestick / Line toggle
-                FilterChip(
+                ChartChip(
+                    label = strings.chartModeCandles,
                     selected = state.isCandlestickMode,
-                    onClick = { viewModel.toggleChartMode() },
-                    label = {
-                        Text(
-                            text = if (state.isCandlestickMode) strings.chartModeCandles else strings.chartModeLine,
-                            fontSize = 11.sp,
-                        )
-                    },
-                    colors = FilterChipDefaults.filterChipColors(
-                        selectedContainerColor = trendColor.copy(alpha = 0.2f),
-                        selectedLabelColor = trendColor,
-                    ),
+                    accent = trendColor,
+                    onClick = { viewModel.setChartMode(candlestick = true) },
+                )
+                ChartChip(
+                    label = strings.chartModeLine,
+                    selected = !state.isCandlestickMode,
+                    accent = trendColor,
+                    onClick = { viewModel.setChartMode(candlestick = false) },
+                )
+                Spacer(Modifier.weight(1f))
+                ChartChip(
+                    label = "SMA ${state.smaPeriod}",
+                    selected = state.showSma,
+                    accent = SmaColor,
+                    onClick = { viewModel.toggleSma() },
                 )
             }
 
-            Spacer(Modifier.padding(vertical = 6.dp))
+            Spacer(Modifier.padding(vertical = 2.dp))
+
+            // ── OHLC readout for the tapped (or latest) candle ──
+            OhlcReadout(
+                candle = state.focusedCandle,
+                bullColor = DarkProfitGreenColor,
+                bearColor = DarkLossRedColor,
+            )
+
+            Spacer(Modifier.padding(vertical = 4.dp))
 
             // ── Chart ──
             val transform = remember(state.candles, state.selectedRange) {
-                ChartTransform(state.candles, 0f, 1f)
+                ChartTransform(state.candles)
+            }
+            val xAxisLabel = remember(state.selectedRange) {
+                ChartFormatters.axisLabelFor(state.selectedRange)
             }
 
             Box(modifier = Modifier.weight(1f).fillMaxWidth()) {
@@ -174,20 +202,27 @@ fun CryptoChartScreen(
                     if (state.isCandlestickMode) {
                         CandlestickChart(
                             transform = transform,
-                            bullColor = trendColor,
+                            bullColor = DarkProfitGreenColor,
                             bearColor = DarkLossRedColor,
+                            crosshairIndex = state.crosshairIndex,
                             onCrosshair = { viewModel.onCrosshair(it) },
+                            xAxisLabel = xAxisLabel,
                         )
                     } else {
                         LineChart(transform = transform, lineColor = trendColor)
+
+                        // The candlestick view draws its own price axis; the line
+                        // view only gets the high/low markers.
+                        PriceLabels(transform = transform)
                     }
 
-                    // Price labels on right edge
-                    PriceLabels(
-                        transform = transform,
-                        currentPrice = state.currentPrice,
-                        trendColor = trendColor,
-                    )
+                    if (state.showSma) {
+                        SMAOverlay(
+                            transform = transform,
+                            smaValues = state.smaValues,
+                            color = SmaColor,
+                        )
+                    }
                 } else if (state.error != null) {
                     ErrorRetryCard(
                         message = stringResource(state.error!!),
@@ -256,12 +291,86 @@ fun CryptoChartScreen(
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun PriceLabels(
-    transform: ChartTransform,
-    currentPrice: Double,
-    trendColor: Color,
+private fun ChartChip(
+    label: String,
+    selected: Boolean,
+    accent: Color,
+    onClick: () -> Unit,
 ) {
+    FilterChip(
+        selected = selected,
+        onClick = onClick,
+        label = { Text(text = label, fontSize = 11.sp) },
+        colors = FilterChipDefaults.filterChipColors(
+            selectedContainerColor = accent.copy(alpha = 0.2f),
+            selectedLabelColor = accent,
+        ),
+    )
+}
+
+/**
+ * Open / High / Low / Close of the candle under the crosshair — the reason to
+ * look at candles rather than a line in the first place.
+ */
+@Composable
+private fun OhlcReadout(
+    candle: CandleModel?,
+    bullColor: Color,
+    bearColor: Color,
+) {
+    if (candle == null) return
+    val closeColor = if (candle.isBullish) bullColor else bearColor
+    val mutedColor = MaterialTheme.colorScheme.onSurfaceVariant
+
+    Row(
+        // Five monospace columns don't fit a narrow phone at every price
+        // magnitude — let the row scroll rather than clipping the close.
+        modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(10.dp),
+    ) {
+        Text(
+            text = ChartFormatters.formatDateTime(candle.openTime),
+            fontSize = 10.sp,
+            fontFamily = FontFamily.Monospace,
+            color = mutedColor.copy(alpha = 0.7f),
+        )
+        OhlcValue("O", candle.open, mutedColor, mutedColor)
+        OhlcValue("H", candle.high, mutedColor, bullColor)
+        OhlcValue("L", candle.low, mutedColor, bearColor)
+        OhlcValue("C", candle.close, mutedColor, closeColor)
+    }
+}
+
+@Composable
+private fun OhlcValue(
+    label: String,
+    value: Double,
+    labelColor: Color,
+    valueColor: Color,
+) {
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        Text(
+            text = label,
+            fontSize = 10.sp,
+            fontFamily = FontFamily.Monospace,
+            color = labelColor.copy(alpha = 0.6f),
+        )
+        Spacer(Modifier.width(3.dp))
+        Text(
+            text = ChartFormatters.formatPrice(value),
+            fontSize = 10.sp,
+            fontFamily = FontFamily.Monospace,
+            fontWeight = FontWeight.SemiBold,
+            color = valueColor,
+        )
+    }
+}
+
+@Composable
+private fun PriceLabels(transform: ChartTransform) {
     val vis = transform.visibleCandles
     if (vis.isEmpty()) return
 

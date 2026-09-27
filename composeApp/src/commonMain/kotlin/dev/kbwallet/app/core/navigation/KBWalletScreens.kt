@@ -39,6 +39,10 @@ object EditProfile
 @Serializable
 object NotificationSettings
 
+/** The in-app notification centre — history of everything the app raised. */
+@Serializable
+object NotificationCenter
+
 @Serializable
 object SecuritySettings
 

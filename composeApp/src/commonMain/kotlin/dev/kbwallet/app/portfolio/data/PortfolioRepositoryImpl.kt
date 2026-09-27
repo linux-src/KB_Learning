@@ -16,6 +16,7 @@ import dev.kbwallet.app.portfolio.data.local.UserBalanceDao
 import dev.kbwallet.app.portfolio.data.local.UserBalanceEntity
 import dev.kbwallet.app.portfolio.data.mapper.toPortfolioCoinEntity
 import dev.kbwallet.app.portfolio.data.mapper.toPortfolioCoinModel
+import dev.kbwallet.app.portfolio.domain.AccountBalance
 import dev.kbwallet.app.portfolio.domain.PortfolioCoinModel
 import dev.kbwallet.app.portfolio.domain.PortfolioRepository
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -134,16 +135,20 @@ class PortfolioRepositoryImpl(
         return userBalanceDao.getCashBalanceFlow().map { it ?: 10000.0 }
     }
 
-    override fun totalBalanceFlow(): Flow<Result<Double, DataError.Remote>> {
+    override fun accountBalanceFlow(): Flow<Result<AccountBalance, DataError.Remote>> {
         return combine(
             cashBalanceFlow(),
             calculateTotalPortfolioValue()
         ) { cashBalance, portfolioResult ->
             when (portfolioResult) {
                 is Result.Success -> {
-                    Result.Success(cashBalance + portfolioResult.data)
+                    Result.Success(AccountBalance(cash = cashBalance, holdings = portfolioResult.data))
                 }
                 is Result.Error -> {
+                    // Only the holdings half can fail (it needs live prices).
+                    // Cash is local and always known, but a partial balance
+                    // would be misread as the whole account — the caller keeps
+                    // showing its last good figures instead.
                     Result.Error(portfolioResult.error)
                 }
             }

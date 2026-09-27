@@ -11,7 +11,6 @@ import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.unit.dp
-import dev.kbwallet.app.chart.domain.model.CandleModel
 import dev.kbwallet.app.chart.presentation.util.ChartTransform
 
 /**
@@ -29,11 +28,14 @@ fun SMAOverlay(
     modifier: Modifier = Modifier,
     color: Color = Color(0xFFFFA500),
     lineWidth: Float = 1.5f,
-    chartHeightFraction: Float = 0.85f,
+    chartHeightFraction: Float = ChartPlotHeightFraction,
 ) {
     Canvas(modifier = modifier.fillMaxSize()) {
         val chartHeight = size.height * chartHeightFraction
-        val chartWidth = size.width
+        // Same plot area as CandlestickChart, so the overlay tracks the candle
+        // centers instead of drifting right by the width of the price axis.
+        val chartWidth = size.width - ChartPriceAxisWidth.toPx()
+        if (chartWidth <= 0f) return@Canvas
         val candles = transform.candles
         if (candles.isEmpty() || smaValues.isEmpty()) return@Canvas
 

@@ -22,9 +22,10 @@ KB Wallet is a Compose Multiplatform app (Android, iOS, and Desktop from one Kot
 - **Portfolio tracking** — holdings, live prices, P&L, transaction history
 - **Buy / Sell flow** with a simulated balance — no real funds ever move
 - **Trading simulator** — a background market engine that fills limit/stop orders against live-ish price ticks, so you can practice order types risk-free
-- **Charts** — line and Japanese candlestick views with pan/zoom, SMA overlay, and multiple timeframes
+- **Charts** — Japanese candlesticks by default, with an OHLC crosshair readout, SMA overlay, pan/zoom and multiple timeframes; a simplified line view is one tap away
 - **Watchlist** — track coins you don't hold yet
 - **Crypto Library** — a 17-topic reference built into the app, from beginner basics (wallets, private keys, exchanges, stablecoins) to advanced topics (DeFi, tokenomics, leverage, taxes)
+- **Notifications** — a purchase raises an animated in-app confirmation, a foreground banner, an entry in the in-app notification centre, and a real OS notification (Android status bar, iOS notification centre, desktop tray), each gated by the switches in notification settings
 - **Biometric login** and a lightweight auth server (Ktor) for account security
 - **Analytics** — realized/unrealized P&L breakdown
 
@@ -55,7 +56,7 @@ KB_Learning/
 └── server/                # Ktor backend: auth, user accounts, token issuing
 ```
 
-Client code under `composeApp/src/commonMain/kotlin/dev/kbwallet/app/` is organized by feature (`portfolio`, `trade`, `chart`, `coins`, `watchlist`, `history`, `library`, `analytics`, `simulator`, `profile`, `dashboard`), each following a rough data → domain → presentation layering, wired together with Koin.
+Client code under `composeApp/src/commonMain/kotlin/dev/kbwallet/app/` is organized by feature (`portfolio`, `trade`, `chart`, `coins`, `watchlist`, `history`, `library`, `analytics`, `simulator`, `notifications`, `profile`, `dashboard`), each following a rough data → domain → presentation layering, wired together with Koin.
 
 ## Getting started
 

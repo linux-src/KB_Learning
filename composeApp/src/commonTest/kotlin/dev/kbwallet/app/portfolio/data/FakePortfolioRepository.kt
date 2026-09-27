@@ -6,6 +6,7 @@ import dev.kbwallet.app.core.domain.Result
 import dev.kbwallet.app.core.domain.coin.Coin
 import dev.kbwallet.app.history.data.LimitOrderEntity
 import dev.kbwallet.app.history.data.TransactionEntity
+import dev.kbwallet.app.portfolio.domain.AccountBalance
 import dev.kbwallet.app.portfolio.domain.PortfolioCoinModel
 import dev.kbwallet.app.portfolio.domain.PortfolioRepository
 import kotlinx.coroutines.flow.Flow
@@ -55,9 +56,13 @@ class FakePortfolioRepository : PortfolioRepository {
         return _portfolioValue.map { Result.Success(it) }
     }
 
-    override fun totalBalanceFlow(): Flow<Result<Double, DataError.Remote>> {
+    override fun accountBalanceFlow(): Flow<Result<AccountBalance, DataError.Remote>> {
         return combine(_cashBalance, _portfolioValue, _totalBalanceError) { cashBalance, portfolioValue, error ->
-            if (error != null) Result.Error(error) else Result.Success(cashBalance + portfolioValue)
+            if (error != null) {
+                Result.Error(error)
+            } else {
+                Result.Success(AccountBalance(cash = cashBalance, holdings = portfolioValue))
+            }
         }
     }
 

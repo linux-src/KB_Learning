@@ -16,6 +16,7 @@ import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
@@ -93,5 +94,92 @@ class ChartViewModelTest {
         val state = viewModel.state.value
         assertEquals(5, state.candles.size)
         assertNull(state.error)
+    }
+
+    @Test
+    fun `candlesticks are the default chart mode`() = runTest {
+        assertTrue(
+            viewModel.state.value.isCandlestickMode,
+            "candles are the primary view — the chart must not open on the line mode",
+        )
+    }
+
+    @Test
+    fun `setChartMode switches between candles and line`() = runTest {
+        viewModel.setChartMode(candlestick = false)
+        assertFalse(viewModel.state.value.isCandlestickMode)
+
+        viewModel.setChartMode(candlestick = true)
+        assertTrue(viewModel.state.value.isCandlestickMode)
+    }
+
+    @Test
+    fun `switching chart mode drops the crosshair`() = runTest {
+        klineDataSource.result = Result.Success(FakeKlineDataSource.fakeCandles(5))
+        viewModel.init("bitcoin", "Bitcoin")
+        viewModel.onCrosshair(2)
+
+        viewModel.setChartMode(candlestick = false)
+
+        assertNull(
+            viewModel.state.value.crosshairIndex,
+            "only the candlestick view draws a crosshair",
+        )
+    }
+
+    @Test
+    fun `loading candles computes an SMA value per candle`() = runTest {
+        val period = ChartViewModel.DEFAULT_SMA_PERIOD
+        klineDataSource.result = Result.Success(
+            FakeKlineDataSource.fakeCandles(period + 5, startPrice = 100.0)
+        )
+
+        viewModel.init("bitcoin", "Bitcoin")
+
+        val sma = viewModel.state.value.smaValues
+        assertEquals(period + 5, sma.size, "SMA is indexed alongside the candles")
+        // The window isn't filled until `period` candles are in.
+        assertTrue(sma.take(period - 1).all { it == null })
+        // fakeCandles closes at 100, 101, 102... so the first full window
+        // averages 100..(100 + period - 1).
+        assertEquals(100.0 + (period - 1) / 2.0, sma[period - 1])
+    }
+
+    @Test
+    fun `a failed load leaves no stale SMA overlay behind`() = runTest {
+        klineDataSource.result = Result.Success(FakeKlineDataSource.fakeCandles(40))
+        viewModel.init("bitcoin", "Bitcoin")
+        assertTrue(viewModel.state.value.smaValues.isNotEmpty())
+
+        klineDataSource.result = Result.Error(DataError.Remote.SERVER)
+        viewModel.selectTimeRange(TimeRange.ONE_WEEK)
+
+        assertTrue(viewModel.state.value.smaValues.isEmpty())
+    }
+
+    @Test
+    fun `toggleSma hides and restores the overlay`() = runTest {
+        assertTrue(viewModel.state.value.showSma)
+
+        viewModel.toggleSma()
+        assertFalse(viewModel.state.value.showSma)
+
+        viewModel.toggleSma()
+        assertTrue(viewModel.state.value.showSma)
+    }
+
+    @Test
+    fun `focusedCandle follows the crosshair and falls back to the latest candle`() = runTest {
+        klineDataSource.result = Result.Success(FakeKlineDataSource.fakeCandles(5, startPrice = 100.0))
+        viewModel.init("bitcoin", "Bitcoin")
+
+        // No crosshair — the readout describes the most recent candle.
+        assertEquals(104.0, viewModel.state.value.focusedCandle?.close)
+
+        viewModel.onCrosshair(1)
+        assertEquals(101.0, viewModel.state.value.focusedCandle?.close)
+
+        viewModel.onCrosshair(null)
+        assertEquals(104.0, viewModel.state.value.focusedCandle?.close)
     }
 }

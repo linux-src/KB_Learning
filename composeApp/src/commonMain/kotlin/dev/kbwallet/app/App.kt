@@ -21,6 +21,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.navigation.NavHostController
@@ -44,6 +45,7 @@ import dev.kbwallet.app.core.navigation.HelpSupport
 import dev.kbwallet.app.core.navigation.History
 import dev.kbwallet.app.core.navigation.LanguageSettings
 import dev.kbwallet.app.core.navigation.Login
+import dev.kbwallet.app.core.navigation.NotificationCenter
 import dev.kbwallet.app.core.navigation.NotificationSettings
 import dev.kbwallet.app.core.navigation.PnLAnalytics
 import dev.kbwallet.app.core.navigation.Portfolio
@@ -66,6 +68,8 @@ import dev.kbwallet.app.portfolio.presentation.PortfolioScreen
 import dev.kbwallet.app.profile.presentation.EditProfileScreen
 import dev.kbwallet.app.profile.presentation.HelpSupportScreen
 import dev.kbwallet.app.profile.presentation.LanguageSettingsScreen
+import dev.kbwallet.app.notifications.presentation.NotificationCenterScreen
+import dev.kbwallet.app.notifications.presentation.component.InAppNotificationHost
 import dev.kbwallet.app.profile.presentation.NotificationSettingsScreen
 import dev.kbwallet.app.profile.presentation.ProfileScreen
 import dev.kbwallet.app.profile.presentation.SecuritySettingsScreen
@@ -110,6 +114,10 @@ fun App() {
             modifier = Modifier.fillMaxSize(),
             color = MaterialTheme.colorScheme.background,
         ) {
+        // The in-app banner sits above the NavHost rather than inside any one
+        // screen, so a notification raised on the trade sheet still shows after
+        // the sheet closes and the user has navigated on.
+        Box(modifier = Modifier.fillMaxSize()) {
         NavHost(
             navController = navController,
             startDestination = Biometric,
@@ -202,6 +210,11 @@ fun App() {
                     onNavigateBack = { navController.popBackStack() }
                 )
             }
+            composable<NotificationCenter> {
+                NotificationCenterScreen(
+                    onNavigateBack = { navController.popBackStack() }
+                )
+            }
             composable<SecuritySettings> {
                 SecuritySettingsScreen(
                     onNavigateBack = { navController.popBackStack() }
@@ -250,6 +263,12 @@ fun App() {
                     onBack = { navController.popBackStack() },
                 )
             }
+        }
+
+        InAppNotificationHost(
+            modifier = Modifier.align(Alignment.TopCenter),
+            onBannerClicked = { navController.navigate(NotificationCenter) },
+        )
         }
         }
     }
@@ -331,6 +350,9 @@ private fun MainScaffold(navController: NavHostController) {
                     },
                     onNavigateToNotifications = {
                         navController.navigate(NotificationSettings)
+                    },
+                    onNavigateToNotificationCenter = {
+                        navController.navigate(NotificationCenter)
                     },
                     onNavigateToSecurity = {
                         navController.navigate(SecuritySettings)

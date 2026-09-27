@@ -10,6 +10,7 @@ import dev.kbwallet.app.core.util.formatCoinUnit
 import dev.kbwallet.app.core.util.formatFiat
 import dev.kbwallet.app.core.util.formatPercentage
 import dev.kbwallet.app.core.util.toUiText
+import dev.kbwallet.app.portfolio.domain.AccountBalance
 import dev.kbwallet.app.portfolio.domain.PortfolioCoinModel
 import dev.kbwallet.app.portfolio.domain.PortfolioRepository
 import kotlinx.coroutines.CoroutineDispatcher
@@ -31,21 +32,22 @@ class PortfolioViewModel(
 
     private val retryTrigger = RetryTrigger()
     private val portfolioCoinsFlow = retryTrigger.retryable { portfolioRepository.allPortfolioCoinsFlow() }
-    private val totalBalanceFlowRetryable = retryTrigger.retryable { portfolioRepository.totalBalanceFlow() }
+    // Cash used to be collected as a fourth source alongside the total; the
+    // account balance now carries both halves, so they can't disagree about
+    // which cash figure the total was built from.
+    private val accountBalanceFlow = retryTrigger.retryable { portfolioRepository.accountBalanceFlow() }
 
     val state: StateFlow<PortfolioState> = combine(
         _state,
         portfolioCoinsFlow,
-        totalBalanceFlowRetryable,
-        portfolioRepository.cashBalanceFlow(),
-    ) { currentState, portfolioCoinsResponse, totalBalanceResult, cashBalance ->
+        accountBalanceFlow,
+    ) { currentState, portfolioCoinsResponse, accountBalanceResult ->
         when (portfolioCoinsResponse) {
             is Result.Success -> {
                 handleSuccessState(
                     currentState = currentState,
                     portfolioCoins = portfolioCoinsResponse.data,
-                    totalBalanceResult = totalBalanceResult,
-                    cashBalance = cashBalance
+                    accountBalanceResult = accountBalanceResult,
                 )
             }
             is Result.Error -> {
@@ -71,24 +73,24 @@ class PortfolioViewModel(
     private fun handleSuccessState(
         currentState: PortfolioState,
         portfolioCoins: List<PortfolioCoinModel>,
-        totalBalanceResult: Result<Double, DataError>,
-        cashBalance: Double
+        accountBalanceResult: Result<AccountBalance, DataError>,
     ): PortfolioState {
-        // The coin list itself loaded fine, so it's still shown — only the total
-        // balance figure and the error banner reflect this failure, rather than
-        // silently showing "$0" as if the user's balance really were zero.
-        val portfolioValue = when (totalBalanceResult) {
-            is Result.Success -> formatFiat(totalBalanceResult.data)
-            is Result.Error -> currentState.portfolioValue
+        // The coin list itself loaded fine, so it's still shown — only the
+        // balance figures and the error banner reflect this failure, rather
+        // than silently showing "$0" as if the user's balance really were zero.
+        val balance = when (accountBalanceResult) {
+            is Result.Success -> accountBalanceResult.data
+            is Result.Error -> null
         }
 
         return currentState.copy(
             coins = portfolioCoins.map { it.toUiPortfolioCoinItem() },
-            portfolioValue = portfolioValue,
-            cashBalance = formatFiat(cashBalance),
+            totalValue = balance?.let { formatFiat(it.total) } ?: currentState.totalValue,
+            holdingsValue = balance?.let { formatFiat(it.holdings) } ?: currentState.holdingsValue,
+            cashBalance = balance?.let { formatFiat(it.cash) } ?: currentState.cashBalance,
             showBuyButton = portfolioCoins.isNotEmpty(),
             isLoading = false,
-            error = (totalBalanceResult as? Result.Error)?.error?.toUiText(),
+            error = (accountBalanceResult as? Result.Error)?.error?.toUiText(),
         )
     }
 

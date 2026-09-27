@@ -59,9 +59,32 @@ class DashboardViewModelTest {
         viewModel.state.test {
             val state = awaitItem()
             assertEquals(0, state.coinCount)
-            assertEquals(formatFiat(10000.0), state.portfolioValue)
+            assertEquals(formatFiat(10000.0), state.totalValue)
             assertEquals(1, state.topCoins.size)
             assertNull(state.error)
+        }
+    }
+
+    @Test
+    fun `the dashboard reports cash apart from the value held in coins`() = runTest {
+        val viewModel = buildViewModel()
+
+        viewModel.state.test {
+            awaitItem()
+
+            portfolioRepository.updateCashBalance(6000.0)
+            portfolioRepository.savePortfolioCoin(
+                FakePortfolioRepository.portfolioCoin.copy(
+                    ownedAmountInUnit = 40.0,
+                    ownedAmountInFiat = 4000.0,
+                )
+            )
+
+            val state = viewModel.state.value
+            assertEquals(formatFiat(6000.0), state.cashBalance)
+            assertEquals(formatFiat(4000.0), state.holdingsValue)
+            assertEquals(formatFiat(10000.0), state.totalValue)
+            cancelAndIgnoreRemainingEvents()
         }
     }
 
@@ -94,7 +117,7 @@ class DashboardViewModelTest {
 
             // Once the actual failing source recovers, the error clears.
             portfolioRepository.clearTotalBalanceError()
-            portfolioRepository.updateCashBalance(10000.0) // re-trigger totalBalanceFlow's combine
+            portfolioRepository.updateCashBalance(10000.0) // re-trigger accountBalanceFlow's combine
             assertNull(viewModel.state.value.error)
 
             cancelAndIgnoreRemainingEvents()

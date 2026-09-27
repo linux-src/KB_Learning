@@ -3,6 +3,7 @@ package dev.kbwallet.app.chart.presentation
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dev.kbwallet.app.chart.domain.GetChartDataUseCase
+import dev.kbwallet.app.chart.domain.indicator.calculateSMA
 import dev.kbwallet.app.chart.domain.model.TimeRange
 import dev.kbwallet.app.core.domain.Result
 import dev.kbwallet.app.core.util.toUiText
@@ -41,8 +42,19 @@ class ChartViewModel(
         _state.update { it.copy(crosshairIndex = index) }
     }
 
+    // Only the candlestick view draws a crosshair, so switching modes drops it —
+    // otherwise the line view keeps an OHLC readout pinned to a candle with
+    // nothing on screen pointing at it.
+    fun setChartMode(candlestick: Boolean) {
+        _state.update { it.copy(isCandlestickMode = candlestick, crosshairIndex = null) }
+    }
+
     fun toggleChartMode() {
-        _state.update { it.copy(isCandlestickMode = !it.isCandlestickMode) }
+        setChartMode(!_state.value.isCandlestickMode)
+    }
+
+    fun toggleSma() {
+        _state.update { it.copy(showSma = !it.showSma) }
     }
 
     private fun loadData(range: TimeRange) {
@@ -51,7 +63,9 @@ class ChartViewModel(
         // switching time ranges) leaves the old range's chart on screen instead of
         // the error+retry state, since the "has data" branch below only checks
         // candles.isNotEmpty(), not whether this fetch actually succeeded.
-        _state.update { it.copy(candles = emptyList(), isLoading = true, error = null) }
+        _state.update {
+            it.copy(candles = emptyList(), smaValues = emptyList(), isLoading = true, error = null)
+        }
         viewModelScope.launch {
             when (val result = getChartDataUseCase.execute(currentCoinId, range)) {
                 is Result.Success -> {
@@ -63,6 +77,7 @@ class ChartViewModel(
                     _state.update {
                         it.copy(
                             candles = candles,
+                            smaValues = calculateSMA(candles.map { c -> c.close }, it.smaPeriod),
                             isLoading = false,
                             currentPrice = last?.close ?: 0.0,
                             priceChange = change,
@@ -76,5 +91,10 @@ class ChartViewModel(
                 }
             }
         }
+    }
+
+    companion object {
+        /** Window used for the SMA overlay; short enough to have values on every range. */
+        const val DEFAULT_SMA_PERIOD = 20
     }
 }
