@@ -1,5 +1,22 @@
 package dev.kbwallet.app.core.auth.presentation
 
+import androidx.compose.ui.text.input.VisualTransformation
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
+import androidx.compose.material3.IconButton
+import androidx.compose.material.icons.filled.VisibilityOff
+import androidx.compose.material.icons.filled.Visibility
+import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.Lock
+import dev.kbwallet.app.theme.component.AppMark
+import androidx.compose.ui.draw.clip
+import androidx.compose.material3.Icon
+import androidx.compose.material.icons.filled.Email
+import androidx.compose.material.icons.Icons
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -55,20 +72,27 @@ fun RegisterScreen(
         contentAlignment = Alignment.Center,
     ) {
         Column(
-            modifier = Modifier.fillMaxWidth().padding(24.dp),
+            modifier = Modifier
+                .widthIn(max = 420.dp)
+                .fillMaxWidth()
+                .verticalScroll(rememberScrollState())
+                .padding(24.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
+            AppMark(size = 56.dp)
+            Spacer(Modifier.height(20.dp))
             Text(
                 text = strings.authRegisterTitle,
-                style = MaterialTheme.typography.headlineSmall,
+                style = MaterialTheme.typography.headlineMedium,
                 color = MaterialTheme.colorScheme.onBackground,
             )
-            Spacer(Modifier.height(24.dp))
+            Spacer(Modifier.height(28.dp))
 
             OutlinedTextField(
                 value = state.email,
                 onValueChange = viewModel::onEmailChanged,
                 label = { Text(strings.authEmailLabel) },
+                leadingIcon = { Icon(Icons.Default.Email, contentDescription = null) },
                 singleLine = true,
                 keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(keyboardType = KeyboardType.Email),
                 modifier = Modifier.fillMaxWidth(),
@@ -76,15 +100,10 @@ fun RegisterScreen(
             )
             Spacer(Modifier.height(12.dp))
 
-            OutlinedTextField(
+            PasswordField(
                 value = state.password,
                 onValueChange = viewModel::onPasswordChanged,
-                label = { Text(strings.authPasswordLabel) },
-                singleLine = true,
-                visualTransformation = PasswordVisualTransformation(),
-                keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(keyboardType = KeyboardType.Password),
-                modifier = Modifier.fillMaxWidth(),
-                colors = authFieldColors(),
+                label = strings.authPasswordLabel,
             )
             Spacer(Modifier.height(12.dp))
 
@@ -92,6 +111,7 @@ fun RegisterScreen(
                 value = state.username,
                 onValueChange = viewModel::onUsernameChanged,
                 label = { Text(strings.authUsernameOptionalLabel) },
+                leadingIcon = { Icon(Icons.Default.Person, contentDescription = null) },
                 singleLine = true,
                 modifier = Modifier.fillMaxWidth(),
                 colors = authFieldColors(),
@@ -101,8 +121,13 @@ fun RegisterScreen(
                 Spacer(Modifier.height(12.dp))
                 Text(
                     text = error.label(strings),
-                    color = LocalKBLearningColorsPalette.current.lossRed,
+                    color = MaterialTheme.colorScheme.onSurface,
                     style = MaterialTheme.typography.bodySmall,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(12.dp))
+                        .background(LocalKBLearningColorsPalette.current.lossContainer)
+                        .padding(12.dp),
                 )
             }
 
@@ -111,12 +136,10 @@ fun RegisterScreen(
             Button(
                 onClick = viewModel::onRegisterClicked,
                 enabled = !state.isLoading,
-                shape = RoundedCornerShape(12.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier.fillMaxWidth().height(54.dp),
             ) {
                 if (state.isLoading) {
-                    CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp)
+                    CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp, color = MaterialTheme.colorScheme.onPrimary)
                 } else {
                     Text(strings.authRegisterButton)
                 }
@@ -140,4 +163,37 @@ internal fun authFieldColors() = OutlinedTextFieldDefaults.colors(
     unfocusedBorderColor = MaterialTheme.colorScheme.outline,
     focusedLabelColor = MaterialTheme.colorScheme.primary,
     cursorColor = MaterialTheme.colorScheme.primary,
+    focusedContainerColor = MaterialTheme.colorScheme.surface,
+    unfocusedContainerColor = MaterialTheme.colorScheme.surface,
+    focusedLeadingIconColor = MaterialTheme.colorScheme.primary,
+    unfocusedLeadingIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
 )
+
+@Composable
+internal fun PasswordField(
+    value: String,
+    onValueChange: (String) -> Unit,
+    label: String,
+) {
+    var visible by remember { mutableStateOf(false) }
+    OutlinedTextField(
+        value = value,
+        onValueChange = onValueChange,
+        label = { Text(label) },
+        singleLine = true,
+        leadingIcon = { Icon(Icons.Default.Lock, contentDescription = null) },
+        trailingIcon = {
+            IconButton(onClick = { visible = !visible }) {
+                Icon(
+                    if (visible) Icons.Default.VisibilityOff else Icons.Default.Visibility,
+                    contentDescription = null,
+                )
+            }
+        },
+        visualTransformation = if (visible) VisualTransformation.None else PasswordVisualTransformation(),
+        keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(keyboardType = KeyboardType.Password),
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(14.dp),
+        colors = authFieldColors(),
+    )
+}

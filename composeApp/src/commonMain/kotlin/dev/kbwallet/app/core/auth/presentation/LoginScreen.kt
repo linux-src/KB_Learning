@@ -1,5 +1,13 @@
 package dev.kbwallet.app.core.auth.presentation
 
+import dev.kbwallet.app.theme.component.AppMark
+import androidx.compose.ui.draw.clip
+import androidx.compose.material3.Icon
+import androidx.compose.material.icons.filled.Email
+import androidx.compose.material.icons.Icons
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -53,20 +61,27 @@ fun LoginScreen(
         contentAlignment = Alignment.Center,
     ) {
         Column(
-            modifier = Modifier.fillMaxWidth().padding(24.dp),
+            modifier = Modifier
+                .widthIn(max = 420.dp)
+                .fillMaxWidth()
+                .verticalScroll(rememberScrollState())
+                .padding(24.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
+            AppMark(size = 56.dp)
+            Spacer(Modifier.height(20.dp))
             Text(
                 text = strings.authLoginTitle,
-                style = MaterialTheme.typography.headlineSmall,
+                style = MaterialTheme.typography.headlineMedium,
                 color = MaterialTheme.colorScheme.onBackground,
             )
-            Spacer(Modifier.height(24.dp))
+            Spacer(Modifier.height(28.dp))
 
             OutlinedTextField(
                 value = state.email,
                 onValueChange = viewModel::onEmailChanged,
                 label = { Text(strings.authEmailLabel) },
+                leadingIcon = { Icon(Icons.Default.Email, contentDescription = null) },
                 singleLine = true,
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
                 modifier = Modifier.fillMaxWidth(),
@@ -74,23 +89,23 @@ fun LoginScreen(
             )
             Spacer(Modifier.height(12.dp))
 
-            OutlinedTextField(
+            PasswordField(
                 value = state.password,
                 onValueChange = viewModel::onPasswordChanged,
-                label = { Text(strings.authPasswordLabel) },
-                singleLine = true,
-                visualTransformation = PasswordVisualTransformation(),
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
-                modifier = Modifier.fillMaxWidth(),
-                colors = authFieldColors(),
+                label = strings.authPasswordLabel,
             )
 
             state.error?.let { error ->
                 Spacer(Modifier.height(12.dp))
                 Text(
                     text = error.label(strings),
-                    color = LocalKBLearningColorsPalette.current.lossRed,
+                    color = MaterialTheme.colorScheme.onSurface,
                     style = MaterialTheme.typography.bodySmall,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(12.dp))
+                        .background(LocalKBLearningColorsPalette.current.lossContainer)
+                        .padding(12.dp),
                 )
             }
 
@@ -99,12 +114,10 @@ fun LoginScreen(
             Button(
                 onClick = viewModel::onLoginClicked,
                 enabled = !state.isLoading,
-                shape = RoundedCornerShape(12.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier.fillMaxWidth().height(54.dp),
             ) {
                 if (state.isLoading) {
-                    CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp)
+                    CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp, color = MaterialTheme.colorScheme.onPrimary)
                 } else {
                     Text(strings.authLoginButton)
                 }
