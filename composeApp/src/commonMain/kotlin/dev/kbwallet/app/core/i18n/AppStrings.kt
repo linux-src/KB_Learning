@@ -276,7 +276,69 @@ interface AppStrings {
     val libraryLevelBeginner: String
     val libraryLevelIntermediate: String
     val libraryLevelAdvanced: String
+    // ── Shared UI ──
+    val appName: String
+    val biometricFeatureTrack: String
+    val biometricFeaturePractice: String
+    val biometricFeatureLearn: String
+    val dashboardGreeting: String
+    val dashboardQuickActions: String
+    val dashboardActionBuy: String
+    val dashboardActionLearn: String
+    val dashboardActionHistory: String
+    val actionSeeAll: String
+    val historyToday: String
+    val historyYesterday: String
+    /** Short month names, January first. */
+    val monthsShort: List<String>
+    fun historyStatus(raw: String): String
+    val historyJournalAdd: String
+    val historyJournalEdit: String
+    val historyJournalTitle: String
+    val historyJournalNotesLabel: String
+    val historyJournalTagsLabel: String
+    val historyJournalTagsHint: String
+    val actionSave: String
+    val historyFilterAll: String
+    val coinsSearchPlaceholder: String
+    val coinsSearchEmpty: String
+    val coinsHint: String
+    fun libraryReadingTime(minutes: Int): String
+    fun libraryTopicsCount(count: Int): String
+    val libraryNextTopic: String
+    val libraryFinished: String
+
+    // ── Theme ──
+    val themeTitle: String
+    val themeSystem: String
+    val themeLight: String
+    val themeDark: String
+    val themeToggle: String
+
+    // ── About ──
+    val aboutTitle: String
+    val aboutDescription: String
+    fun aboutVersion(version: String): String
+    val aboutSourceCode: String
+    val aboutLicense: String
+    val aboutStack: String
+
+    // ── Trade result ──
+    val tradeSellSuccessTitle: String
+    fun tradeSellSuccessSubtitle(amount: String): String
+    val tradeSummaryPaid: String
+    val tradeSummaryReceived: String
+    val tradeSummaryPrice: String
+    val actionDone: String
+
+    // ── Simulator ──
+    val simulatorIntro: String
+    val simulatorChangeCoin: String
+    val simulatorSpeed: String
+    fun simulatorExitReason(reason: String): String
+    val sponsorshipFooter: String
 }
+
 
 private object EnStrings : AppStrings {
     override val actionBack = "Back"
@@ -299,8 +361,8 @@ private object EnStrings : AppStrings {
     override val profileMenuPnlSubtitle = "View your trading performance"
     override val profileMenuSponsorshipTitle = "Support Development"
     override val profileMenuSponsorshipSubtitle = "Sponsor the author, buy a coffee"
-    override val sponsorshipTitle = "Support KB Learning"
-    override val sponsorshipDesc = "KB Learning is an independent project dedicated to providing the best crypto learning experience. Your support helps maintain server infrastructure, develop new features, and keep the application ad-free."
+    override val sponsorshipTitle = "Support KB Wallet"
+    override val sponsorshipDesc = "KB Wallet is an independent project dedicated to providing the best crypto learning experience. Your support helps maintain server infrastructure, develop new features, and keep the application ad-free."
     override val sponsorshipCoffee = "One-time Donation"
     override val sponsorshipCoffeeSub = "Support current development"
     override val sponsorshipBeer = "Monthly Sponsorship"
@@ -364,13 +426,13 @@ private object EnStrings : AppStrings {
     override val faqQ3 = "Where can I see my transaction history?"
     override val faqA3 = "All your buy and sell transactions are recorded in the History tab. You can view details like date, amount, and price there."
     override val faqQ4 = "Is my data secure?"
-    override val faqA4 = "Yes! KB Learning uses biometric authentication and local encryption to keep your data safe. Enable biometric login in Security settings."
+    override val faqA4 = "Yes! KB Wallet uses biometric authentication and local encryption to keep your data safe. Enable biometric login in Security settings."
     override val faqQ5 = "How are coin prices determined?"
     override val faqA5 = "Coin prices are fetched from live market data via API. Prices update in real-time to reflect current market conditions."
     override val helpContactHeading = "Contact Us"
     override val helpContactLiveChat = "Live Chat: Available 9AM - 6PM"
     override val helpAboutHeading = "About"
-    override val helpAboutVersion = "Version 1.0.0"
+    override val helpAboutVersion = "Version 2.0.0"
     override val helpAboutTagline = "Built with Kotlin Multiplatform"
     override val contentDescCollapse = "Collapse"
     override val contentDescExpand = "Expand"
@@ -387,10 +449,10 @@ private object EnStrings : AppStrings {
     override val dashboardStatPortfolioValue = "In Assets"
     override val dashboardStatAssets = "Assets"
     override val dashboardStat24hChange = "24h Change"
-    override val dashboardMarketOverview = "Market Overview"
-    override val dashboardTradingTipTitle = "📈 Trading Tip"
+    override val dashboardMarketOverview = "Learn & practice"
+    override val dashboardTradingTipTitle = "Trading tip"
     override val dashboardTradingTipBody = "Start by exploring available coins and buying your first cryptocurrency. Diversify your portfolio to manage risk effectively."
-    override val dashboardLibraryTitle = "📚 Crypto Library"
+    override val dashboardLibraryTitle = "Crypto Library"
     override val dashboardLibrarySubtitle = "New to crypto? Learn everything you need to know, from the basics to advanced topics."
     override val dashboardPortfolioSummary = "Portfolio Summary"
     override val dashboardNoAssetsTitle = "No assets yet"
@@ -406,7 +468,7 @@ private object EnStrings : AppStrings {
     override val portfolioDistributionTitle = "Portfolio Distribution"
     override val portfolioNothingToShow = "Nothing to show yet. Add some coins!"
     override val portfolioYourAssets = "Your Assets"
-    override fun portfolioCoinsCount(count: Int) = "$count coins"
+    override fun portfolioCoinsCount(count: Int) = "$count"
     override val portfolioNoSearchResults = "No coins match your search"
     override val portfolioEmptyTitle = "Your portfolio is empty"
     override val portfolioEmptySubtitle = "Start by discovering coins to trade"
@@ -492,11 +554,11 @@ private object EnStrings : AppStrings {
     override fun simulatorTpLabel(price: String) = "TP: $price"
     override val simulatorCloseButton = "Close"
 
-    override val biometricTagline = "Powered by Compose Multiplatform"
-    override val biometricLoginButton = "Login"
+    override val biometricTagline = "Learn crypto. Trade without the risk."
+    override val biometricLoginButton = "Log in with biometrics"
     override val biometricNotAvailable = "Biometric is not available on your device!"
     override val biometricDisclaimer = "This app is for educational purposes only and does not constitute financial advice. Cryptocurrency investments carry risk — do your own research."
-    override val biometricCreateAccountPrompt = "No biometrics? Create an account"
+    override val biometricCreateAccountPrompt = "Create an account"
     override val biometricLoginWithAccountPrompt = "Already have an account? Log in"
 
     override val authRegisterTitle = "Create your account"
@@ -524,6 +586,69 @@ private object EnStrings : AppStrings {
     override val libraryLevelBeginner = "Beginner"
     override val libraryLevelIntermediate = "Intermediate"
     override val libraryLevelAdvanced = "Advanced"
+    override val appName = "KB Wallet"
+    override val biometricFeatureTrack = "Track a paper portfolio at live prices"
+    override val biometricFeaturePractice = "Practice limit & stop orders risk-free"
+    override val biometricFeatureLearn = "Learn crypto from the basics up"
+    override val dashboardGreeting = "Welcome back"
+    override val dashboardQuickActions = "Quick actions"
+    override val dashboardActionBuy = "Buy"
+    override val dashboardActionLearn = "Learn"
+    override val dashboardActionHistory = "Analytics"
+    override val actionSeeAll = "See all"
+    override val historyToday = "Today"
+    override val historyYesterday = "Yesterday"
+    override val monthsShort = listOf("Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec")
+    override fun historyStatus(raw: String) = when (raw.lowercase()) {
+        "completed" -> "Completed"
+        "pending" -> "Pending"
+        "cancelled", "canceled" -> "Cancelled"
+        else -> raw
+    }
+    override val historyJournalAdd = "Add note"
+    override val historyJournalEdit = "Edit note"
+    override val historyJournalTitle = "Trade journal"
+    override val historyJournalNotesLabel = "Why did you make this trade?"
+    override val historyJournalTagsLabel = "Tags"
+    override val historyJournalTagsHint = "Comma-separated, e.g. dca, breakout"
+    override val actionSave = "Save"
+    override val historyFilterAll = "All"
+    override val coinsSearchPlaceholder = "Search by name or ticker"
+    override val coinsSearchEmpty = "Nothing found for this query"
+    override val coinsHint = "Tap a coin to open its chart and trade"
+    override fun libraryReadingTime(minutes: Int) = "$minutes min read"
+    override fun libraryTopicsCount(count: Int) = if (count == 1) "1 topic" else "$count topics"
+    override val libraryNextTopic = "Next topic"
+    override val libraryFinished = "You've reached the end of the library. Nicely done!"
+    override val themeTitle = "Theme"
+    override val themeSystem = "System"
+    override val themeLight = "Light"
+    override val themeDark = "Dark"
+    override val themeToggle = "Switch theme"
+    override val aboutTitle = "About"
+    override val aboutDescription = "Learn crypto and practice trading on a paper portfolio at live prices. No real money is involved."
+    override fun aboutVersion(version: String) = "Version $version"
+    override val aboutSourceCode = "Source code on GitHub"
+    override val aboutLicense = "Open source · GPL-3.0"
+    override val aboutStack = "Kotlin Multiplatform · Compose"
+    override val tradeSellSuccessTitle = "Sale complete"
+    override fun tradeSellSuccessSubtitle(amount: String) = "$amount sold"
+    override val tradeSummaryPaid = "Paid"
+    override val tradeSummaryReceived = "Received"
+    override val tradeSummaryPrice = "Price"
+    override val actionDone = "Done"
+    override val simulatorIntro = "Replay real price history candle by candle with $10,000 of virtual cash. Open longs and shorts, set stops and see how you would have done."
+    override val simulatorChangeCoin = "Change coin"
+    override val simulatorSpeed = "Speed"
+    override val sponsorshipFooter = "You can also support the project by leaving a review or sharing the app with friends."
+    override fun simulatorExitReason(reason: String) = when (reason) {
+        "MANUAL" -> "Closed manually"
+        "STOP_LOSS" -> "Stop-loss"
+        "TAKE_PROFIT" -> "Take-profit"
+        "LIQUIDATION" -> "Liquidated"
+        "END_OF_DATA" -> "End of data"
+        else -> reason
+    }
 }
 
 private object RuStrings : AppStrings {
@@ -548,7 +673,7 @@ private object RuStrings : AppStrings {
     override val profileMenuSponsorshipTitle = "Поддержать проект"
     override val profileMenuSponsorshipSubtitle = "Спонсировать автора, купить кофе"
     override val sponsorshipTitle = "Поддержать проект"
-    override val sponsorshipDesc = "KB Learning — это независимый проект, созданный для комфортного обучения. Ваша поддержка помогает оплачивать серверную инфраструктуру, разрабатывать новые функции и сохранять приложение без рекламы."
+    override val sponsorshipDesc = "KB Wallet — это независимый проект, созданный для комфортного обучения. Ваша поддержка помогает оплачивать серверную инфраструктуру, разрабатывать новые функции и сохранять приложение без рекламы."
     override val sponsorshipCoffee = "Разовое пожертвование"
     override val sponsorshipCoffeeSub = "Поддержать текущую разработку"
     override val sponsorshipBeer = "Ежемесячная поддержка"
@@ -612,13 +737,13 @@ private object RuStrings : AppStrings {
     override val faqQ3 = "Где посмотреть историю операций?"
     override val faqA3 = "Все операции покупки и продажи фиксируются на вкладке «История». Там видны дата, сумма и цена каждой операции."
     override val faqQ4 = "Безопасны ли мои данные?"
-    override val faqA4 = "Да! KB Learning использует биометрическую аутентификацию и локальное шифрование для защиты ваших данных. Включите биометрический вход в настройках безопасности."
+    override val faqA4 = "Да! KB Wallet использует биометрическую аутентификацию и локальное шифрование для защиты ваших данных. Включите биометрический вход в настройках безопасности."
     override val faqQ5 = "Как определяются цены на монеты?"
     override val faqA5 = "Цены на монеты берутся из актуальных рыночных данных через API и обновляются в реальном времени."
     override val helpContactHeading = "Связаться с нами"
     override val helpContactLiveChat = "Онлайн-чат: доступен с 9:00 до 18:00"
     override val helpAboutHeading = "О приложении"
-    override val helpAboutVersion = "Версия 1.0.0"
+    override val helpAboutVersion = "Версия 2.0.0"
     override val helpAboutTagline = "Создано на Kotlin Multiplatform"
     override val contentDescCollapse = "Свернуть"
     override val contentDescExpand = "Развернуть"
@@ -635,10 +760,10 @@ private object RuStrings : AppStrings {
     override val dashboardStatPortfolioValue = "В активах"
     override val dashboardStatAssets = "Активы"
     override val dashboardStat24hChange = "Изменение за 24ч"
-    override val dashboardMarketOverview = "Обзор рынка"
-    override val dashboardTradingTipTitle = "📈 Совет трейдеру"
+    override val dashboardMarketOverview = "Учись и практикуйся"
+    override val dashboardTradingTipTitle = "Совет трейдеру"
     override val dashboardTradingTipBody = "Начните с изучения доступных монет и покупки первой криптовалюты. Диверсифицируйте портфель, чтобы эффективно управлять риском."
-    override val dashboardLibraryTitle = "📚 Крипто-библиотека"
+    override val dashboardLibraryTitle = "Крипто-библиотека"
     override val dashboardLibrarySubtitle = "Новичок в крипте? Узнайте всё необходимое — от основ до продвинутых тем."
     override val dashboardPortfolioSummary = "Сводка по портфелю"
     override val dashboardNoAssetsTitle = "Пока нет активов"
@@ -654,7 +779,7 @@ private object RuStrings : AppStrings {
     override val portfolioDistributionTitle = "Распределение портфеля"
     override val portfolioNothingToShow = "Пока нечего показать. Добавьте монеты!"
     override val portfolioYourAssets = "Ваши активы"
-    override fun portfolioCoinsCount(count: Int) = "монет: $count"
+    override fun portfolioCoinsCount(count: Int) = "$count"
     override val portfolioNoSearchResults = "Монеты не найдены"
     override val portfolioEmptyTitle = "Ваш портфель пуст"
     override val portfolioEmptySubtitle = "Начните с поиска монет для торговли"
@@ -740,11 +865,11 @@ private object RuStrings : AppStrings {
     override fun simulatorTpLabel(price: String) = "TP: $price"
     override val simulatorCloseButton = "Закрыть"
 
-    override val biometricTagline = "Работает на Compose Multiplatform"
-    override val biometricLoginButton = "Войти"
+    override val biometricTagline = "Изучайте крипту. Торгуйте без риска."
+    override val biometricLoginButton = "Войти по биометрии"
     override val biometricNotAvailable = "Биометрия недоступна на вашем устройстве!"
     override val biometricDisclaimer = "Это приложение создано в образовательных целях и не является финансовой консультацией. Инвестиции в криптовалюту сопряжены с риском — проводите собственное исследование."
-    override val biometricCreateAccountPrompt = "Нет биометрии? Создать аккаунт"
+    override val biometricCreateAccountPrompt = "Создать аккаунт"
     override val biometricLoginWithAccountPrompt = "Уже есть аккаунт? Войти"
 
     override val authRegisterTitle = "Создайте аккаунт"
@@ -772,6 +897,77 @@ private object RuStrings : AppStrings {
     override val libraryLevelBeginner = "Начальный"
     override val libraryLevelIntermediate = "Средний"
     override val libraryLevelAdvanced = "Продвинутый"
+    override val appName = "KB Wallet"
+    override val biometricFeatureTrack = "Учебный портфель по реальным ценам"
+    override val biometricFeaturePractice = "Лимитные и стоп-ордера без риска"
+    override val biometricFeatureLearn = "Основы крипты — с нуля до продвинутых тем"
+    override val dashboardGreeting = "С возвращением"
+    override val dashboardQuickActions = "Быстрые действия"
+    override val dashboardActionBuy = "Купить"
+    override val dashboardActionLearn = "Учиться"
+    override val dashboardActionHistory = "Аналитика"
+    override val actionSeeAll = "Все"
+    override val historyToday = "Сегодня"
+    override val historyYesterday = "Вчера"
+    override val monthsShort = listOf("янв", "фев", "мар", "апр", "мая", "июн", "июл", "авг", "сен", "окт", "ноя", "дек")
+    override fun historyStatus(raw: String) = when (raw.lowercase()) {
+        "completed" -> "Выполнено"
+        "pending" -> "В ожидании"
+        "cancelled", "canceled" -> "Отменено"
+        else -> raw
+    }
+    override val historyJournalAdd = "Добавить заметку"
+    override val historyJournalEdit = "Изменить заметку"
+    override val historyJournalTitle = "Дневник сделки"
+    override val historyJournalNotesLabel = "Почему вы совершили эту сделку?"
+    override val historyJournalTagsLabel = "Теги"
+    override val historyJournalTagsHint = "Через запятую, например: dca, пробой"
+    override val actionSave = "Сохранить"
+    override val historyFilterAll = "Все"
+    override val coinsSearchPlaceholder = "Поиск по названию или тикеру"
+    override val coinsSearchEmpty = "По этому запросу ничего не найдено"
+    override val coinsHint = "Нажмите на монету, чтобы открыть график и торговать"
+    override fun libraryReadingTime(minutes: Int) = "$minutes мин чтения"
+    override fun libraryTopicsCount(count: Int): String {
+        val word = when {
+            count % 100 in 11..14 -> "тем"
+            count % 10 == 1 -> "тема"
+            count % 10 in 2..4 -> "темы"
+            else -> "тем"
+        }
+        return "$count $word"
+    }
+    override val libraryNextTopic = "Следующая тема"
+    override val libraryFinished = "Вы дошли до конца библиотеки. Отличная работа!"
+    override val themeTitle = "Тема оформления"
+    override val themeSystem = "Системная"
+    override val themeLight = "Светлая"
+    override val themeDark = "Тёмная"
+    override val themeToggle = "Сменить тему"
+    override val aboutTitle = "О программе"
+    override val aboutDescription = "Изучайте криптовалюты и тренируйтесь торговать на учебном портфеле по реальным ценам. Настоящие деньги не используются."
+    override fun aboutVersion(version: String) = "Версия $version"
+    override val aboutSourceCode = "Исходный код на GitHub"
+    override val aboutLicense = "Открытый код · GPL-3.0"
+    override val aboutStack = "Kotlin Multiplatform · Compose"
+    override val tradeSellSuccessTitle = "Продажа выполнена"
+    override fun tradeSellSuccessSubtitle(amount: String) = "Продано $amount"
+    override val tradeSummaryPaid = "Списано"
+    override val tradeSummaryReceived = "Получено"
+    override val tradeSummaryPrice = "Цена"
+    override val actionDone = "Готово"
+    override val simulatorIntro = "Прокрутите реальную историю цены свеча за свечой с виртуальными $10 000. Открывайте лонги и шорты, ставьте стопы и смотрите на результат."
+    override val simulatorChangeCoin = "Сменить монету"
+    override val simulatorSpeed = "Скорость"
+    override val sponsorshipFooter = "Ещё можно поддержать проект отзывом или рассказав о приложении друзьям."
+    override fun simulatorExitReason(reason: String) = when (reason) {
+        "MANUAL" -> "Закрыта вручную"
+        "STOP_LOSS" -> "Стоп-лосс"
+        "TAKE_PROFIT" -> "Тейк-профит"
+        "LIQUIDATION" -> "Ликвидация"
+        "END_OF_DATA" -> "Конец данных"
+        else -> reason
+    }
 }
 
 /**
