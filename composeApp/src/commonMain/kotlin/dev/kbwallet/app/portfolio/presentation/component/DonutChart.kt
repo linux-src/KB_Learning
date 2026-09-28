@@ -2,7 +2,12 @@ package dev.kbwallet.app.portfolio.presentation.component
 
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.tween
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
@@ -21,7 +26,12 @@ fun DonutChart(
     if (values.isEmpty() || values.sum() == 0f) return
 
     val total = values.sum()
-    val gapDegrees = 2f
+    val gapDegrees = if (values.count { it > 0f } > 1) 2f else 0f
+
+    val progress = remember { Animatable(0f) }
+    LaunchedEffect(Unit) {
+        progress.animateTo(1f, tween(900, easing = FastOutSlowInEasing))
+    }
 
     Canvas(
         modifier = modifier.aspectRatio(1f)
@@ -34,7 +44,7 @@ fun DonutChart(
         var startAngle = -90f
 
         values.forEachIndexed { index, value ->
-            val sweepAngle = (value / total) * 360f
+            val sweepAngle = (value / total) * 360f * progress.value
             val adjustedSweep = if (sweepAngle > gapDegrees) sweepAngle - gapDegrees else sweepAngle
 
             if (adjustedSweep > 0f) {
