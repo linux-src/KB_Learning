@@ -1,5 +1,15 @@
 package dev.kbwallet.app.trade.presentation.common
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.foundation.clickable
+import androidx.compose.material.icons.filled.ErrorOutline
+import androidx.compose.material3.FilledTonalButton
+import androidx.compose.material3.IconButtonDefaults
+import androidx.compose.ui.semantics.Role
+import dev.kbwallet.app.theme.Dimens
+import dev.kbwallet.app.theme.KBTheme
+import dev.kbwallet.app.theme.tabular
+import dev.kbwallet.app.theme.component.CoinAvatar
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
@@ -68,8 +78,8 @@ fun TradeScreen(
 ) {
     val strings = appStrings()
     val accentColor = when (tradeType) {
-        TradeType.BUY -> MaterialTheme.colorScheme.primary
-        TradeType.SELL -> LocalKBLearningColorsPalette.current.lossRed
+        TradeType.BUY -> KBTheme.colors.profitGreen
+        TradeType.SELL -> KBTheme.colors.lossRed
     }
     val buttonTextColor = when (tradeType) {
         TradeType.BUY -> MaterialTheme.colorScheme.onPrimary
@@ -86,86 +96,57 @@ fun TradeScreen(
         // ── Close ──
         IconButton(
             onClick = onBack,
-            modifier = Modifier.align(Alignment.TopEnd).padding(8.dp).size(36.dp),
+            modifier = Modifier.align(Alignment.TopEnd).padding(end = Dimens.sm),
+            colors = IconButtonDefaults.iconButtonColors(
+                containerColor = MaterialTheme.colorScheme.surfaceVariant,
+                contentColor = MaterialTheme.colorScheme.onSurfaceVariant,
+            ),
         ) {
-            Icon(
-                Icons.Default.Close,
-                contentDescription = strings.actionBack,
-                tint = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
+            Icon(Icons.Default.Close, contentDescription = strings.actionBack)
         }
 
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
-            modifier = Modifier.fillMaxWidth().padding(top = 24.dp, bottom = 16.dp)
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(top = Dimens.xs, bottom = Dimens.xl, start = Dimens.xl, end = Dimens.xl)
         ) {
-            // ── Coin Chip ──
-            Row(
-                horizontalArrangement = Arrangement.Center,
-                verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier
-                    .border(
-                        width = 1.dp,
-                        color = MaterialTheme.colorScheme.outline,
-                        shape = RoundedCornerShape(32.dp)
-                    )
-                    .padding(horizontal = 16.dp, vertical = 6.dp)
-            ) {
-                AsyncImage(
-                    model = state.coin?.iconUrl,
-                    contentDescription = null,
-                    contentScale = ContentScale.Fit,
-                    modifier = Modifier.padding(4.dp).clip(CircleShape).size(24.dp)
+            // ── Coin ──
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                CoinAvatar(
+                    iconUrl = state.coin?.iconUrl,
+                    symbol = state.coin?.symbol ?: "?",
+                    size = 32.dp,
                 )
-                Spacer(modifier = Modifier.width(8.dp))
+                Spacer(modifier = Modifier.width(Dimens.xs))
                 Text(
                     text = state.coin?.name ?: "",
-                    style = MaterialTheme.typography.labelLarge,
-                    fontWeight = FontWeight.SemiBold,
-                    color = MaterialTheme.colorScheme.onBackground,
+                    style = MaterialTheme.typography.titleMedium,
+                    color = MaterialTheme.colorScheme.onSurface,
                     modifier = Modifier.testTag("trade_screen_coin_name"),
                 )
             }
             if (state.coin != null) {
                 Text(
-                    text = "1 ${state.coin.symbol} ≈ ${formatFiat(state.coin.price)}",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = Color.Gray,
-                    modifier = Modifier.padding(top = 4.dp)
+                    text = "1 ${state.coin.symbol.uppercase()} ≈ ${formatFiat(state.coin.price)}",
+                    style = MaterialTheme.typography.bodySmall.tabular(),
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(top = Dimens.xxs)
                 )
             }
 
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(Dimens.lg))
 
             // ── Mode Toggle (Fiat / Coin) ──
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.Center,
-            ) {
-                Text(
-                    text = "$",
-                    style = MaterialTheme.typography.labelLarge,
-                    fontWeight = if (!state.isAmountInUnits) FontWeight.Bold else FontWeight.Normal,
-                    color = if (!state.isAmountInUnits) MaterialTheme.colorScheme.primary
-                    else MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-                IconButton(onClick = onToggleMode, modifier = Modifier.padding(horizontal = 8.dp)) {
-                    Icon(
-                        Icons.Default.SwapHoriz,
-                        contentDescription = "Swap",
-                        tint = MaterialTheme.colorScheme.primary
-                    )
-                }
-                Text(
-                    text = state.coin?.symbol ?: strings.tradeCoinFallback,
-                    style = MaterialTheme.typography.labelLarge,
-                    fontWeight = if (state.isAmountInUnits) FontWeight.Bold else FontWeight.Normal,
-                    color = if (state.isAmountInUnits) MaterialTheme.colorScheme.primary
-                    else MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-            }
+            UnitToggle(
+                fiatLabel = "USD",
+                coinLabel = (state.coin?.symbol ?: strings.tradeCoinFallback).uppercase(),
+                isCoin = state.isAmountInUnits,
+                accent = accentColor,
+                onToggle = onToggleMode,
+            )
 
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(Dimens.lg))
 
             // ── Title ──
             Text(
@@ -173,7 +154,7 @@ fun TradeScreen(
                     TradeType.BUY -> if (state.isAmountInUnits) strings.tradeCoinAmountLabel else strings.tradeBuyAmountLabel
                     TradeType.SELL -> if (state.isAmountInUnits) strings.tradeCoinAmountLabel else strings.tradeSellAmountLabel
                 },
-                style = MaterialTheme.typography.bodyMedium,
+                style = MaterialTheme.typography.labelLarge,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
 
@@ -187,65 +168,83 @@ fun TradeScreen(
             if (state.isAmountInUnits && state.fiatEquivalent.isNotEmpty()) {
                 Text(
                     text = state.fiatEquivalent,
-                    style = MaterialTheme.typography.bodySmall,
+                    style = MaterialTheme.typography.bodyMedium.tabular(),
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.padding(top = 4.dp),
                 )
             }
+
+            Spacer(modifier = Modifier.height(Dimens.xs))
 
             // ── Available Balance ──
             Text(
                 text = "${strings.tradeAvailablePrefix}${state.availableAmount}",
-                style = MaterialTheme.typography.labelLarge,
+                style = MaterialTheme.typography.labelMedium.tabular(),
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.padding(4.dp)
+                modifier = Modifier
+                    .clip(RoundedCornerShape(8.dp))
+                    .background(MaterialTheme.colorScheme.surfaceVariant)
+                    .padding(horizontal = 10.dp, vertical = 5.dp)
             )
 
             // ── Error ──
-            if (state.error != null) {
-                Text(
-                    text = stringResource(state.error),
-                    style = MaterialTheme.typography.labelLarge,
-                    color = LocalKBLearningColorsPalette.current.lossRed,
-                    modifier = Modifier.padding(4.dp).testTag("trade_error")
-                )
+            AnimatedVisibility(visible = state.error != null) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier
+                        .padding(top = Dimens.sm)
+                        .clip(RoundedCornerShape(Dimens.controlRadius))
+                        .background(KBTheme.colors.lossContainer)
+                        .padding(horizontal = Dimens.sm, vertical = Dimens.xs),
+                ) {
+                    Icon(Icons.Default.ErrorOutline, null, tint = KBTheme.colors.lossRed, modifier = Modifier.size(16.dp))
+                    Spacer(Modifier.width(6.dp))
+                    Text(
+                        text = state.error?.let { stringResource(it) }.orEmpty(),
+                        style = MaterialTheme.typography.labelLarge,
+                        color = MaterialTheme.colorScheme.onSurface,
+                        modifier = Modifier.testTag("trade_error")
+                    )
+                }
             }
 
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(Dimens.lg))
 
             // ── Percentage Chips ──
             Row(
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                modifier = Modifier.padding(horizontal = 24.dp)
+                horizontalArrangement = Arrangement.spacedBy(Dimens.xs),
+                modifier = Modifier.fillMaxWidth()
             ) {
                 listOf(0.25 to "25%", 0.5 to "50%", 0.75 to "75%", 1.0 to "MAX").forEach { (frac, label) ->
-                    OutlinedButton(
+                    FilledTonalButton(
                         onClick = { onPercentageClicked(frac) },
-                        modifier = Modifier.weight(1f).height(36.dp),
-                        contentPadding = PaddingValues(0.dp)
+                        modifier = Modifier.weight(1f).height(40.dp),
+                        contentPadding = PaddingValues(0.dp),
+                        shape = RoundedCornerShape(Dimens.chipRadius),
+                        colors = ButtonDefaults.filledTonalButtonColors(
+                            containerColor = MaterialTheme.colorScheme.surfaceVariant,
+                            contentColor = MaterialTheme.colorScheme.onSurface,
+                        ),
                     ) {
-                        Text(label, fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurface)
+                        Text(label, style = MaterialTheme.typography.labelLarge)
                     }
                 }
             }
 
-            Spacer(modifier = Modifier.height(32.dp))
+            Spacer(modifier = Modifier.height(Dimens.lg))
 
             // ── Action Button ──
             Button(
                 onClick = onSubmitClicked,
                 enabled = !state.isLoading,
-                shape = RoundedCornerShape(16.dp),
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 24.dp),
+                    .height(56.dp),
                 colors = ButtonDefaults.buttonColors(
                     containerColor = accentColor,
                     contentColor = buttonTextColor,
                     disabledContainerColor = accentColor.copy(alpha = 0.5f),
                     disabledContentColor = buttonTextColor.copy(alpha = 0.5f)
                 ),
-                contentPadding = PaddingValues(horizontal = 64.dp, vertical = 14.dp),
             ) {
                 if (state.isLoading) {
                     CircularProgressIndicator(
@@ -260,10 +259,39 @@ fun TradeScreen(
                             TradeType.SELL -> strings.tradeSellButton
                         },
                         style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.SemiBold,
                     )
                 }
             }
+        }
+    }
+}
+
+@Composable
+private fun UnitToggle(
+    fiatLabel: String,
+    coinLabel: String,
+    isCoin: Boolean,
+    accent: Color,
+    onToggle: () -> Unit,
+) {
+    Row(
+        modifier = Modifier
+            .clip(RoundedCornerShape(12.dp))
+            .background(MaterialTheme.colorScheme.surfaceVariant)
+            .padding(3.dp),
+    ) {
+        listOf(false to fiatLabel, true to coinLabel).forEach { (coinSegment, label) ->
+            val selected = coinSegment == isCoin
+            Text(
+                text = label,
+                style = MaterialTheme.typography.labelLarge,
+                color = if (selected) accent else MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier
+                    .clip(RoundedCornerShape(9.dp))
+                    .background(if (selected) MaterialTheme.colorScheme.surface else Color.Transparent)
+                    .clickable(enabled = !selected, role = Role.Tab, onClick = onToggle)
+                    .padding(horizontal = Dimens.md, vertical = Dimens.xs),
+            )
         }
     }
 }
@@ -305,10 +333,9 @@ fun CenteredDollarTextField(
         modifier = modifier
             .focusRequester(focusRequester)
             .padding(16.dp),
-        textStyle = TextStyle(
-            color = MaterialTheme.colorScheme.onBackground,
-            fontSize = 28.sp,
-            fontWeight = FontWeight.Bold,
+        textStyle = MaterialTheme.typography.displaySmall.tabular().copy(
+            color = MaterialTheme.colorScheme.onSurface,
+            fontSize = 40.sp,
             textAlign = TextAlign.Center
         ),
         keyboardOptions = KeyboardOptions.Default.copy(
@@ -317,8 +344,16 @@ fun CenteredDollarTextField(
         decorationBox = { innerTextField ->
             Box(
                 contentAlignment = Alignment.Center,
-                modifier = Modifier.height(56.dp).wrapContentWidth()
+                modifier = Modifier.height(64.dp).wrapContentWidth()
             ) {
+                if (displayText.isEmpty()) {
+                    Text(
+                        text = "0",
+                        style = MaterialTheme.typography.displaySmall.tabular(),
+                        fontSize = 40.sp,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
+                    )
+                }
                 innerTextField()
             }
         },

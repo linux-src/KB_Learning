@@ -149,7 +149,14 @@ class SellViewModel(
                 is Result.Success -> {
                     _amount.value = ""
                     _state.update { it.copy(isLoading = false, error = null) }
-                    _events.send(SellEvents.SellSuccess)
+                    _events.send(
+                        SellEvents.SellSuccess(
+                            coinSymbol = tradeCoin.symbol,
+                            amountInUnit = if (tradeCoin.price > 0) fiatAmount / tradeCoin.price else 0.0,
+                            amountInFiat = fiatAmount,
+                            price = tradeCoin.price,
+                        )
+                    )
                 }
                 is Result.Error -> {
                     _state.update {
@@ -195,5 +202,10 @@ class SellViewModel(
     }
 }
 sealed interface SellEvents {
-    data object SellSuccess : SellEvents
+    data class SellSuccess(
+        val coinSymbol: String,
+        val amountInUnit: Double,
+        val amountInFiat: Double,
+        val price: Double,
+    ) : SellEvents
 }

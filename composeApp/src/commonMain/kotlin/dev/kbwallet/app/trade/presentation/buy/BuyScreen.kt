@@ -11,7 +11,8 @@ import androidx.compose.ui.Modifier
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import dev.kbwallet.app.core.i18n.appStrings
 import dev.kbwallet.app.core.util.formatCoinUnit
-import dev.kbwallet.app.notifications.presentation.component.PurchaseSuccessOverlay
+import dev.kbwallet.app.trade.presentation.common.TradeResult
+import dev.kbwallet.app.trade.presentation.common.TradeSuccessOverlay
 import dev.kbwallet.app.trade.presentation.common.TradeScreen
 import androidx.compose.runtime.LaunchedEffect
 import dev.kbwallet.app.trade.presentation.common.TradeType
@@ -36,8 +37,7 @@ fun BuyScreen(
     val state by viewModel.state.collectAsStateWithLifecycle()
     val strings = appStrings()
 
-    // A successful buy no longer closes the sheet outright — it swaps in the
-    // confirmation animation, which calls onSuccess() once it has played.
+    // On success the sheet shows the confirmation; it calls onSuccess() when done.
     var completedPurchase by remember { mutableStateOf<BuyEvents.BuySuccess?>(null) }
 
     LaunchedEffect(viewModel.events) {
@@ -65,13 +65,14 @@ fun BuyScreen(
 
         val purchase = completedPurchase
         if (purchase != null) {
-            PurchaseSuccessOverlay(
-                title = strings.notifPurchaseTitle,
-                subtitle = strings.tradeSuccessSubtitle(
-                    formatCoinUnit(purchase.amountInUnit, purchase.coinSymbol)
+            TradeSuccessOverlay(
+                result = TradeResult(
+                    isSell = false,
+                    coinAmount = formatCoinUnit(purchase.amountInUnit, purchase.coinSymbol),
+                    price = purchase.price,
+                    total = purchase.amountInFiat,
                 ),
                 onFinished = onSuccess,
-                // Covers exactly the sheet content without stretching it.
                 modifier = Modifier.matchParentSize(),
             )
         }

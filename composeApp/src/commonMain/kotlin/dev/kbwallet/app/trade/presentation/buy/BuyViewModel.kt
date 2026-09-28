@@ -162,6 +162,7 @@ class BuyViewModel(
                             coinSymbol = tradeCoin.symbol,
                             amountInUnit = amountInUnit,
                             amountInFiat = fiatAmount,
+                            price = tradeCoin.price,
                         )
                     )
                 }
@@ -216,5 +217,6 @@ sealed interface BuyEvents {
         val coinSymbol: String,
         val amountInUnit: Double,
         val amountInFiat: Double,
+        val price: Double,
     ) : BuyEvents
 }
