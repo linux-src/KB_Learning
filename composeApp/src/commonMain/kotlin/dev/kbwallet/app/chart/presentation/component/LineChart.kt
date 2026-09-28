@@ -20,7 +20,7 @@ import dev.kbwallet.app.chart.presentation.util.ChartTransform
 fun LineChart(
     transform: ChartTransform,
     modifier: Modifier = Modifier,
-    lineColor: Color = Color(0xFF00FF00),
+    lineColor: Color = Color(0xFF34D399),
     chartArea: Float = ChartPlotHeightFraction,
 ) {
     Canvas(
@@ -107,7 +107,8 @@ fun LineChart(
         // ── Last visible price dot ──
         val last = candles[lastIdx]
         val ly = transform.priceToFraction(last.close) * h
-        drawCircle(Color.White, 4.dp.toPx(), Offset(lastX, ly))
+        drawCircle(lineColor.copy(alpha = 0.25f), 9.dp.toPx(), Offset(lastX, ly))
+        drawCircle(lineColor, 4.dp.toPx(), Offset(lastX, ly))
         drawCircle(lineColor, 5.5.dp.toPx(), Offset(lastX, ly), style = Stroke(1.5.dp.toPx()))
 
         // ── Max / Min dots ──
@@ -124,7 +125,7 @@ fun LineChart(
             Offset(transform.indexToFraction(maxIdx) * w, transform.priceToFraction(candles[maxIdx].high) * h),
         )
         drawCircle(
-            Color(0xFFFF3B30).copy(alpha = 0.3f),
+            Color(0xFFFF6B70).copy(alpha = 0.3f),
             3.dp.toPx(),
             Offset(transform.indexToFraction(minIdx) * w, transform.priceToFraction(candles[minIdx].low) * h),
         )

@@ -26,7 +26,7 @@ fun SMAOverlay(
     transform: ChartTransform,
     smaValues: List<Double?>,
     modifier: Modifier = Modifier,
-    color: Color = Color(0xFFFFA500),
+    color: Color = Color(0xFFFFB547),
     lineWidth: Float = 1.5f,
     chartHeightFraction: Float = ChartPlotHeightFraction,
 ) {

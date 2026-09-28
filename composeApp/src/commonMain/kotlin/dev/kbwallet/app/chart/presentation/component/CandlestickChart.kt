@@ -36,8 +36,8 @@ import dev.kbwallet.app.chart.presentation.util.ChartTransform
 fun CandlestickChart(
     transform: ChartTransform,
     modifier: Modifier = Modifier,
-    bullColor: Color = Color(0xFF00FF00),
-    bearColor: Color = Color(0xFFFF3B30),
+    bullColor: Color = Color(0xFF34D399),
+    bearColor: Color = Color(0xFFFF6B70),
     crosshairIndex: Int? = null,
     onCrosshair: ((Int?) -> Unit)? = null,
     xAxisLabel: (Long) -> String = ChartFormatters::formatDayMonth,

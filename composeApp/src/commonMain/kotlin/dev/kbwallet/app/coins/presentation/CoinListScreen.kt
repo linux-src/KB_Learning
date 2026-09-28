@@ -1,43 +1,44 @@
 package dev.kbwallet.app.coins.presentation
 
-import androidx.compose.foundation.ExperimentalFoundationApi
-import androidx.compose.foundation.background
-import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
+import androidx.compose.material.icons.filled.SearchOff
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import coil3.compose.AsyncImage
 import dev.kbwallet.app.core.i18n.appStrings
-import dev.kbwallet.app.theme.LocalKBLearningColorsPalette
+import dev.kbwallet.app.portfolio.presentation.SearchField
+import dev.kbwallet.app.theme.Dimens
+import dev.kbwallet.app.theme.component.BackHeader
+import dev.kbwallet.app.theme.component.ChangePill
+import dev.kbwallet.app.theme.component.CoinAvatar
+import dev.kbwallet.app.theme.component.EmptyState
 import dev.kbwallet.app.theme.component.ErrorRetryCard
+import dev.kbwallet.app.theme.component.KBCard
+import dev.kbwallet.app.theme.component.SkeletonList
+import dev.kbwallet.app.theme.component.screenContentPadding
+import dev.kbwallet.app.theme.tabular
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.viewmodel.koinViewModel
 
@@ -50,120 +51,102 @@ fun CoinListScreen(
     val coinsListViewModel = koinViewModel<CoinsListViewModel>()
     val state by coinsListViewModel.state.collectAsStateWithLifecycle()
     val strings = appStrings()
+    var query by rememberSaveable { mutableStateOf("") }
 
-    LazyColumn(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(MaterialTheme.colorScheme.background)
-            .padding(16.dp),
-        verticalArrangement = Arrangement.spacedBy(10.dp)
-    ) {
-        // ── Header ──
-        item {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                IconButton(onClick = onBack, modifier = Modifier.size(36.dp)) {
-                    Icon(
-                        Icons.Default.ArrowBack,
-                        contentDescription = strings.actionBack,
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                }
-                Spacer(modifier = Modifier.width(8.dp))
-                Text(
-                    text = strings.coinsListTitle,
-                    style = MaterialTheme.typography.headlineMedium,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.onBackground,
-                )
-            }
-        }
+    val filtered = if (query.isBlank()) state.coins else state.coins.filter {
+        it.name.contains(query, ignoreCase = true) || it.symbol.contains(query, ignoreCase = true)
+    }
 
-        if (state.error != null && state.coins.isEmpty()) {
-            item {
+    Column(Modifier.fillMaxSize()) {
+        BackHeader(title = strings.coinsListTitle, subtitle = strings.coinsHint, onBack = onBack)
+
+        when {
+            state.error != null && state.coins.isEmpty() -> Box(
+                Modifier.fillMaxSize().padding(Dimens.xl),
+                contentAlignment = Alignment.Center,
+            ) {
                 ErrorRetryCard(
                     message = stringResource(state.error!!),
                     onRetry = { coinsListViewModel.retry() },
-                    modifier = Modifier.padding(top = 40.dp),
                 )
             }
-        } else {
-            items(state.coins) { coin ->
-                CoinListItem(
-                    coin = coin,
-                    onCoinLongPressed = { coinId ->
-                        onChartRequested(coinId, coin.name)
-                    },
-                    onCoinClicked = onCoinClicked,
-                )
+
+            // No loading flag in state: empty list without error means still loading.
+            state.coins.isEmpty() -> SkeletonList(rows = 8, header = false)
+
+            else -> LazyColumn(
+                modifier = Modifier.fillMaxSize(),
+                contentPadding = screenContentPadding(top = Dimens.xxs),
+                verticalArrangement = Arrangement.spacedBy(Dimens.itemGap),
+            ) {
+                item {
+                    SearchField(
+                        query = query,
+                        onQueryChange = { query = it },
+                        placeholder = strings.coinsSearchPlaceholder,
+                        modifier = Modifier.padding(bottom = Dimens.xxs),
+                    )
+                }
+                if (filtered.isEmpty()) {
+                    item { EmptyState(icon = Icons.Default.SearchOff, title = strings.coinsSearchEmpty) }
+                }
+                itemsIndexed(filtered, key = { _, coin -> coin.id }) { index, coin ->
+                    CoinListItem(
+                        rank = state.coins.indexOf(coin) + 1,
+                        coin = coin,
+                        onClick = { onChartRequested(coin.id, coin.name) },
+                        modifier = Modifier.animateItem(),
+                    )
+                }
             }
         }
     }
 }
 
-@OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun CoinListItem(
+    rank: Int,
     coin: UiCoinListItem,
-    onCoinLongPressed: (String) -> Unit,
-    onCoinClicked: (String) -> Unit,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
 ) {
-    Row(
-        verticalAlignment = Alignment.CenterVertically,
-        modifier = Modifier
-            .fillMaxWidth()
-            .background(
-                MaterialTheme.colorScheme.surface,
-                RoundedCornerShape(16.dp)
-            )
-            .combinedClickable(
-                onLongClick = { onCoinLongPressed(coin.id) },
-                onClick = { onCoinClicked(coin.id) }
-            )
-            .padding(14.dp)
+    KBCard(
+        modifier = modifier.fillMaxWidth(),
+        onClick = onClick,
+        contentPadding = PaddingValues(horizontal = Dimens.md, vertical = Dimens.sm + 2.dp),
     ) {
-        Box(
-            modifier = Modifier
-                .size(44.dp)
-                .background(Color(0xFF2A2A2A), CircleShape)
-                .padding(6.dp),
-            contentAlignment = Alignment.Center,
-        ) {
-            AsyncImage(
-                model = coin.iconUrl,
-                contentDescription = null,
-                contentScale = ContentScale.Fit,
-                modifier = Modifier.clip(CircleShape).size(32.dp)
-            )
-        }
-        Spacer(modifier = Modifier.width(12.dp))
-        Column(modifier = Modifier.weight(1f)) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
             Text(
-                text = coin.name,
-                style = MaterialTheme.typography.titleSmall,
-                fontWeight = FontWeight.SemiBold,
-                color = MaterialTheme.colorScheme.onBackground,
-            )
-            Text(
-                text = coin.symbol,
-                style = MaterialTheme.typography.bodySmall,
+                text = rank.toString(),
+                style = MaterialTheme.typography.labelMedium.tabular(),
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.width(24.dp),
             )
-        }
-        Column(horizontalAlignment = Alignment.End) {
-            Text(
-                text = coin.formattedPrice,
-                style = MaterialTheme.typography.titleSmall,
-                fontWeight = FontWeight.SemiBold,
-                color = MaterialTheme.colorScheme.onBackground,
-            )
-            Text(
-                text = coin.formattedChange,
-                style = MaterialTheme.typography.bodySmall,
-                color = if (coin.isPositive)
-                    LocalKBLearningColorsPalette.current.profitGreen
-                else
-                    LocalKBLearningColorsPalette.current.lossRed,
-            )
+            CoinAvatar(iconUrl = coin.iconUrl, symbol = coin.symbol)
+            Spacer(modifier = Modifier.width(Dimens.sm))
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = coin.name,
+                    style = MaterialTheme.typography.titleSmall,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+                Text(
+                    text = coin.symbol.uppercase(),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+            Column(horizontalAlignment = Alignment.End) {
+                Text(
+                    text = coin.formattedPrice,
+                    style = MaterialTheme.typography.titleSmall.tabular(),
+                    color = MaterialTheme.colorScheme.onSurface,
+                )
+                Spacer(Modifier.height(2.dp))
+                ChangePill(text = coin.formattedChange, isPositive = coin.isPositive)
+            }
         }
     }
 }

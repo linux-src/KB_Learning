@@ -1,5 +1,17 @@
 package dev.kbwallet.app.chart.presentation
 
+import androidx.compose.foundation.border
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.ui.draw.clip
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.ArrowDownward
+import androidx.compose.material.icons.filled.ArrowUpward
+import androidx.compose.material3.IconButtonDefaults
+import dev.kbwallet.app.theme.Dimens
+import dev.kbwallet.app.theme.KBTheme
+import dev.kbwallet.app.theme.tabular
+import dev.kbwallet.app.theme.component.ChangePill
+import dev.kbwallet.app.theme.component.SkeletonBlock
 import androidx.compose.foundation.background
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.rememberScrollState
@@ -52,8 +64,6 @@ import dev.kbwallet.app.chart.presentation.component.SMAOverlay
 import dev.kbwallet.app.chart.presentation.component.TimeRangeSelector
 import dev.kbwallet.app.chart.presentation.util.ChartFormatters
 import dev.kbwallet.app.chart.presentation.util.ChartTransform
-import dev.kbwallet.app.theme.DarkLossRedColor
-import dev.kbwallet.app.theme.DarkProfitGreenColor
 import dev.kbwallet.app.theme.component.ErrorRetryCard
 import dev.kbwallet.app.trade.presentation.buy.BuyScreen
 import dev.kbwallet.app.trade.presentation.common.TradeType
@@ -61,7 +71,6 @@ import dev.kbwallet.app.trade.presentation.sell.SellScreen
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.viewmodel.koinViewModel
 
-private val SmaColor = Color(0xFFFFA500)
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -82,51 +91,54 @@ fun CryptoChartScreen(
         viewModel.init(coinId, coinName)
     }
 
-    val trendColor = if (state.priceChange >= 0) DarkProfitGreenColor else DarkLossRedColor
+    val trendColor = KBTheme.trend(state.priceChange >= 0)
+    val bullColor = KBTheme.colors.profitGreen
+    val bearColor = KBTheme.colors.lossRed
+    val smaColor = KBTheme.colors.chartAccent
 
     Box(modifier = modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(horizontal = 16.dp)
-                .padding(bottom = 80.dp) // padding for bottom buttons
+                .padding(horizontal = Dimens.md)
+                .padding(bottom = 88.dp) // padding for bottom buttons
         ) {
             // ── Header ──
             Row(
-                modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
+                modifier = Modifier.fillMaxWidth().padding(top = Dimens.sm),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                IconButton(onClick = onBack, modifier = Modifier.size(36.dp)) {
-                    Icon(Icons.Default.ArrowBack, strings.actionBack, tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                IconButton(
+                    onClick = onBack,
+                    colors = IconButtonDefaults.iconButtonColors(
+                        containerColor = MaterialTheme.colorScheme.surfaceVariant,
+                        contentColor = MaterialTheme.colorScheme.onSurface,
+                    ),
+                ) {
+                    Icon(Icons.AutoMirrored.Filled.ArrowBack, strings.actionBack)
                 }
-                Spacer(Modifier.width(8.dp))
+                Spacer(Modifier.width(Dimens.sm))
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
                         text = state.coinName.ifEmpty { coinName },
                         style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.SemiBold,
-                        color = MaterialTheme.colorScheme.onBackground,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                     if (state.currentPrice > 0) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Text(
                                 text = ChartFormatters.formatPrice(state.currentPrice),
-                                fontSize = 22.sp,
-                                fontWeight = FontWeight.Bold,
-                                fontFamily = FontFamily.Monospace,
+                                style = MaterialTheme.typography.headlineMedium.tabular(),
                                 color = MaterialTheme.colorScheme.onBackground,
                             )
-                            Spacer(Modifier.width(10.dp))
-                            val chg = state.priceChangePercent
-                            val sgn = if (chg >= 0) "+" else ""
-                            Text(
-                                text = "$sgn${twoDec(chg)}%",
-                                fontSize = 14.sp,
-                                fontFamily = FontFamily.Monospace,
-                                fontWeight = FontWeight.SemiBold,
-                                color = trendColor,
+                            Spacer(Modifier.width(Dimens.sm))
+                            ChangePill(
+                                text = "${twoDec(state.priceChangePercent)}%",
+                                isPositive = state.priceChangePercent >= 0,
                             )
                         }
+                    } else {
+                        SkeletonBlock(Modifier.padding(top = 4.dp).width(160.dp).height(28.dp))
                     }
                 }
             }
@@ -165,7 +177,7 @@ fun CryptoChartScreen(
                 ChartChip(
                     label = "SMA ${state.smaPeriod}",
                     selected = state.showSma,
-                    accent = SmaColor,
+                    accent = smaColor,
                     onClick = { viewModel.toggleSma() },
                 )
             }
@@ -175,8 +187,8 @@ fun CryptoChartScreen(
             // ── OHLC readout for the tapped (or latest) candle ──
             OhlcReadout(
                 candle = state.focusedCandle,
-                bullColor = DarkProfitGreenColor,
-                bearColor = DarkLossRedColor,
+                bullColor = bullColor,
+                bearColor = bearColor,
             )
 
             Spacer(Modifier.padding(vertical = 4.dp))
@@ -189,21 +201,25 @@ fun CryptoChartScreen(
                 ChartFormatters.axisLabelFor(state.selectedRange)
             }
 
-            Box(modifier = Modifier.weight(1f).fillMaxWidth()) {
+            Box(
+                modifier = Modifier
+                    .weight(1f)
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(Dimens.cardRadius))
+                    .background(MaterialTheme.colorScheme.surface)
+                    .border(1.dp, KBTheme.colors.hairline, RoundedCornerShape(Dimens.cardRadius))
+                    .padding(Dimens.xs),
+            ) {
                 if (state.isLoading) {
-                    CircularProgressIndicator(
-                        modifier = Modifier.align(Alignment.Center).size(28.dp),
-                        color = trendColor,
-                        strokeWidth = 2.dp,
-                    )
+                    SkeletonBlock(Modifier.fillMaxSize(), RoundedCornerShape(Dimens.tileRadius))
                 } else if (state.candles.isNotEmpty()) {
                     ChartGrid(transform = transform)
 
                     if (state.isCandlestickMode) {
                         CandlestickChart(
                             transform = transform,
-                            bullColor = DarkProfitGreenColor,
-                            bearColor = DarkLossRedColor,
+                            bullColor = bullColor,
+                            bearColor = bearColor,
                             crosshairIndex = state.crosshairIndex,
                             onCrosshair = { viewModel.onCrosshair(it) },
                             xAxisLabel = xAxisLabel,
@@ -220,7 +236,7 @@ fun CryptoChartScreen(
                         SMAOverlay(
                             transform = transform,
                             smaValues = state.smaValues,
-                            color = SmaColor,
+                            color = smaColor,
                         )
                     }
                 } else if (state.error != null) {
@@ -234,34 +250,48 @@ fun CryptoChartScreen(
         }
 
         // ── Sticky Bottom Buttons ──
-        Row(
+        Column(
             modifier = Modifier
                 .align(Alignment.BottomCenter)
                 .fillMaxWidth()
-                .background(MaterialTheme.colorScheme.background)
-                .padding(16.dp),
-            horizontalArrangement = Arrangement.spacedBy(16.dp)
+                .background(MaterialTheme.colorScheme.background),
         ) {
-            Button(
-                onClick = {
-                    sheetTradeType = TradeType.BUY
-                    showTradeSheet = true
-                },
-                modifier = Modifier.weight(1f).height(50.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = DarkProfitGreenColor)
+            Box(Modifier.fillMaxWidth().height(1.dp).background(KBTheme.colors.hairline))
+            Row(
+                modifier = Modifier.fillMaxWidth().padding(Dimens.md),
+                horizontalArrangement = Arrangement.spacedBy(Dimens.sm)
             ) {
-                Text(strings.tradeBuyButton, fontWeight = FontWeight.Bold)
-            }
+                Button(
+                    onClick = {
+                        sheetTradeType = TradeType.BUY
+                        showTradeSheet = true
+                    },
+                    modifier = Modifier.weight(1f).height(54.dp),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = bullColor,
+                        contentColor = MaterialTheme.colorScheme.onPrimary,
+                    ),
+                ) {
+                    Icon(Icons.Default.ArrowDownward, contentDescription = null, modifier = Modifier.size(18.dp))
+                    Spacer(Modifier.width(6.dp))
+                    Text(strings.tradeBuyButton, style = MaterialTheme.typography.titleSmall)
+                }
 
-            Button(
-                onClick = {
-                    sheetTradeType = TradeType.SELL
-                    showTradeSheet = true
-                },
-                modifier = Modifier.weight(1f).height(50.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = DarkLossRedColor)
-            ) {
-                Text(strings.tradeSellButton, fontWeight = FontWeight.Bold)
+                Button(
+                    onClick = {
+                        sheetTradeType = TradeType.SELL
+                        showTradeSheet = true
+                    },
+                    modifier = Modifier.weight(1f).height(54.dp),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = bearColor,
+                        contentColor = Color.White,
+                    ),
+                ) {
+                    Icon(Icons.Default.ArrowUpward, contentDescription = null, modifier = Modifier.size(18.dp))
+                    Spacer(Modifier.width(6.dp))
+                    Text(strings.tradeSellButton, style = MaterialTheme.typography.titleSmall)
+                }
             }
         }
     }
@@ -302,10 +332,16 @@ private fun ChartChip(
     FilterChip(
         selected = selected,
         onClick = onClick,
-        label = { Text(text = label, fontSize = 11.sp) },
+        label = { Text(text = label, style = MaterialTheme.typography.labelMedium) },
         colors = FilterChipDefaults.filterChipColors(
-            selectedContainerColor = accent.copy(alpha = 0.2f),
+            selectedContainerColor = accent.copy(alpha = 0.16f),
             selectedLabelColor = accent,
+        ),
+        border = FilterChipDefaults.filterChipBorder(
+            enabled = true,
+            selected = selected,
+            borderColor = KBTheme.colors.hairline,
+            selectedBorderColor = accent.copy(alpha = 0.4f),
         ),
     )
 }
@@ -334,7 +370,7 @@ private fun OhlcReadout(
         Text(
             text = ChartFormatters.formatDateTime(candle.openTime),
             fontSize = 10.sp,
-            fontFamily = FontFamily.Monospace,
+            style = MaterialTheme.typography.labelSmall.tabular(),
             color = mutedColor.copy(alpha = 0.7f),
         )
         OhlcValue("O", candle.open, mutedColor, mutedColor)
@@ -355,14 +391,14 @@ private fun OhlcValue(
         Text(
             text = label,
             fontSize = 10.sp,
-            fontFamily = FontFamily.Monospace,
+            style = MaterialTheme.typography.labelSmall.tabular(),
             color = labelColor.copy(alpha = 0.6f),
         )
         Spacer(Modifier.width(3.dp))
         Text(
             text = ChartFormatters.formatPrice(value),
             fontSize = 10.sp,
-            fontFamily = FontFamily.Monospace,
+            style = MaterialTheme.typography.labelSmall.tabular(),
             fontWeight = FontWeight.SemiBold,
             color = valueColor,
         )
@@ -388,14 +424,14 @@ private fun PriceLabels(transform: ChartTransform) {
             Text(
                 ChartFormatters.formatPrice(high),
                 fontSize = 10.sp,
-                fontFamily = FontFamily.Monospace,
+                style = MaterialTheme.typography.labelSmall.tabular(),
                 color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
             )
             Spacer(Modifier.weight(1f))
             Text(
                 ChartFormatters.formatPrice(low),
                 fontSize = 10.sp,
-                fontFamily = FontFamily.Monospace,
+                style = MaterialTheme.typography.labelSmall.tabular(),
                 color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
             )
         }
