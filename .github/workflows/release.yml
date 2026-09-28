@@ -203,6 +203,9 @@ jobs:
 
       - name: Build and push
         uses: docker/build-push-action@v6
+        env:
+          # The build record artifact isn't a zip and breaks download-artifact.
+          DOCKER_BUILD_RECORD_UPLOAD: false
         with:
           context: .
           file: server/Dockerfile
@@ -221,6 +224,7 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           path: artifacts
+          pattern: '*-{apk,packages,dmg,msi}'
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
