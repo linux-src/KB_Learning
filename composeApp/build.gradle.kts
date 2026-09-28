@@ -162,8 +162,8 @@ android {
         applicationId = "dev.kbwallet.app"
         minSdk = libs.versions.android.minSdk.get().toInt()
         targetSdk = libs.versions.android.targetSdk.get().toInt()
-        versionCode = 1
-        versionName = "1.0"
+        versionCode = 2
+        versionName = "2.0.0"
     }
     packaging {
         resources {
@@ -225,7 +225,7 @@ compose.desktop {
         nativeDistributions {
             targetFormats(TargetFormat.Deb, TargetFormat.Rpm, TargetFormat.Dmg, TargetFormat.Msi)
             packageName = "KB Wallet"
-            packageVersion = "1.0.0"
+            packageVersion = "2.0.0"
             description = "KB Wallet — crypto portfolio & trading simulator"
             vendor = "KB Wallet"
 
