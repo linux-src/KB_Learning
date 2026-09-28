@@ -5,6 +5,8 @@ import dev.kbwallet.app.core.database.AppDatabase
 import dev.kbwallet.app.core.database.getAppDatabaseBuilder
 import dev.kbwallet.app.core.i18n.IosLanguageStorage
 import dev.kbwallet.app.core.i18n.LanguageStorage
+import dev.kbwallet.app.theme.mode.IosThemeStorage
+import dev.kbwallet.app.theme.mode.ThemeStorage
 import dev.kbwallet.app.notifications.IosSystemNotifier
 import dev.kbwallet.app.notifications.domain.SystemNotifier
 import io.ktor.client.engine.HttpClientEngine
@@ -17,5 +19,6 @@ actual val platformModule = module {
     single<HttpClientEngine> { Darwin.create() }
     singleOf(::getAppDatabaseBuilder).bind<RoomDatabase.Builder<AppDatabase>>()
     single<LanguageStorage> { IosLanguageStorage() }
+    single<ThemeStorage> { IosThemeStorage() }
     single<SystemNotifier> { IosSystemNotifier() }
 }

@@ -5,6 +5,8 @@ import dev.kbwallet.app.core.database.AppDatabase
 import dev.kbwallet.app.core.database.getAppDatabaseBuilder
 import dev.kbwallet.app.core.i18n.AndroidLanguageStorage
 import dev.kbwallet.app.core.i18n.LanguageStorage
+import dev.kbwallet.app.theme.mode.AndroidThemeStorage
+import dev.kbwallet.app.theme.mode.ThemeStorage
 import dev.kbwallet.app.notifications.AndroidSystemNotifier
 import dev.kbwallet.app.notifications.domain.SystemNotifier
 import io.ktor.client.engine.HttpClientEngine
@@ -20,5 +22,6 @@ actual val platformModule = module {
     single<HttpClientEngine> { Android.create() }
     singleOf(::getAppDatabaseBuilder).bind<RoomDatabase.Builder<AppDatabase>>()
     single<LanguageStorage> { AndroidLanguageStorage(androidContext()) }
+    single<ThemeStorage> { AndroidThemeStorage(androidContext()) }
     single<SystemNotifier> { AndroidSystemNotifier(androidContext()) }
 }

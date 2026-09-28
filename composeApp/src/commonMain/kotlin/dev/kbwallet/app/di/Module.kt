@@ -14,6 +14,7 @@ import dev.kbwallet.app.core.network.auth.AuthApiClient
 import dev.kbwallet.app.core.security.TokenStorage
 import dev.kbwallet.app.core.security.SecureTokenStorage
 import dev.kbwallet.app.core.i18n.LanguageController
+import dev.kbwallet.app.theme.mode.ThemeController
 import io.ktor.client.HttpClient
 import org.koin.core.context.startKoin
 import org.koin.core.module.Module
@@ -73,6 +74,7 @@ val sharedModule = module {
 
     // localization
     single { LanguageController(get()) }
+    single { ThemeController(get()) }
 
     // trade
     singleOf(::BuyCoinUseCase)
