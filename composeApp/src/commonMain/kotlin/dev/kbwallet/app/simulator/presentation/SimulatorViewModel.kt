@@ -54,6 +54,19 @@ class SimulatorViewModel(
         loadHistoryData(coin)
     }
 
+    fun changeCoin() {
+        stopPlayback()
+        _state.update {
+            it.copy(
+                selectedCoin = null,
+                candles = emptyList(),
+                isPlaying = false,
+                isLoading = false,
+                error = null,
+            )
+        }
+    }
+
     private fun loadHistoryData(coin: Coin) {
         // Clear the previous candles up front, not just isLoading/error — otherwise a
         // failed fetch (new coin, or a time-range switch) leaves the last-loaded data

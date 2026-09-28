@@ -1,48 +1,92 @@
 package dev.kbwallet.app.simulator.presentation
 
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.IntrinsicSize
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.RowScope
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.*
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
+import androidx.compose.material.icons.automirrored.filled.TrendingDown
+import androidx.compose.material.icons.automirrored.filled.TrendingUp
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Lightbulb
+import androidx.compose.material.icons.filled.Pause
+import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material.icons.filled.SkipNext
+import androidx.compose.material.icons.filled.SkipPrevious
+import androidx.compose.material.icons.filled.SwapHoriz
+import androidx.compose.material.icons.filled.Warning
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.FilledIconButton
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.IconButtonDefaults
+import androidx.compose.material3.LinearProgressIndicator
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.TextField
+import androidx.compose.material3.TextFieldDefaults
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.font.FontFamily
-import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import coil3.compose.AsyncImage
 import dev.kbwallet.app.chart.presentation.component.CandlestickChart
 import dev.kbwallet.app.chart.presentation.component.ChartGrid
-import dev.kbwallet.app.chart.presentation.component.LineChart
-import dev.kbwallet.app.chart.presentation.component.SMAOverlay
 import dev.kbwallet.app.chart.presentation.util.ChartTransform
+import dev.kbwallet.app.core.domain.coin.Coin
 import dev.kbwallet.app.core.i18n.appStrings
 import dev.kbwallet.app.core.util.formatFiat
-import dev.kbwallet.app.simulator.domain.*
-import dev.kbwallet.app.theme.DarkLossRedColor
-import dev.kbwallet.app.theme.DarkProfitGreenColor
-import dev.kbwallet.app.theme.LocalKBLearningColorsPalette
+import dev.kbwallet.app.simulator.domain.ClosedTrade
+import dev.kbwallet.app.simulator.domain.PositionSide
+import dev.kbwallet.app.simulator.domain.SimPosition
+import dev.kbwallet.app.theme.Dimens
+import dev.kbwallet.app.theme.KBTheme
+import dev.kbwallet.app.theme.component.BackHeader
+import dev.kbwallet.app.theme.component.ChangePill
+import dev.kbwallet.app.theme.component.CoinAvatar
 import dev.kbwallet.app.theme.component.ErrorRetryCard
+import dev.kbwallet.app.theme.component.IconBadge
+import dev.kbwallet.app.theme.component.KBCard
+import dev.kbwallet.app.theme.component.SectionHeader
+import dev.kbwallet.app.theme.component.SkeletonList
 import dev.kbwallet.app.theme.component.StatCard
 import dev.kbwallet.app.theme.component.StatCardSize
+import dev.kbwallet.app.theme.component.Tag
+import dev.kbwallet.app.theme.component.screenContentPadding
+import dev.kbwallet.app.theme.tabular
 import org.koin.compose.viewmodel.koinViewModel
-import kotlin.math.roundToInt
 import kotlin.math.round
 
 /** Format a Double to N decimal places (KMP-safe, no String.format). */
@@ -56,8 +100,6 @@ private fun fmtDec(value: Double, decimals: Int): String {
     return "$intPart.$fracPart"
 }
 
-private val SubtextGray = Color(0xFFAAAAAA)
-
 @Composable
 fun SimulatorScreen(
     onBack: () -> Unit,
@@ -70,430 +112,402 @@ fun SimulatorScreen(
         viewModel.loadCoins()
     }
 
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(MaterialTheme.colorScheme.background)
-    ) {
-        // ── Header ──
-        Row(
-            modifier = Modifier.fillMaxWidth().padding(16.dp, 8.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            IconButton(onClick = onBack, modifier = Modifier.size(36.dp)) {
-                Icon(Icons.AutoMirrored.Filled.ArrowBack, strings.actionBack, tint = MaterialTheme.colorScheme.onSurfaceVariant)
-            }
-            Spacer(Modifier.width(8.dp))
-            Text(
-                text = strings.simulatorTitle,
-                style = MaterialTheme.typography.titleLarge,
-                fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.onBackground
-            )
-            Spacer(Modifier.weight(1f))
-            if (state.activeHint != null) {
-                IconButton(onClick = { viewModel.nextHint() }) {
-                    Icon(Icons.Default.Info, strings.simulatorHintContentDesc, tint = Color(0xFFFFA500))
+    Column(modifier = Modifier.fillMaxSize()) {
+        BackHeader(
+            title = strings.simulatorTitle,
+            subtitle = state.selectedCoin?.let { "${it.name} · ${it.symbol.uppercase()}" },
+            onBack = onBack,
+            actions = {
+                if (state.selectedCoin != null) {
+                    TextButton(onClick = viewModel::changeCoin) {
+                        Icon(Icons.Default.SwapHoriz, contentDescription = null, modifier = Modifier.size(18.dp))
+                        Spacer(Modifier.width(4.dp))
+                        Text(strings.simulatorChangeCoin, style = MaterialTheme.typography.labelLarge)
+                    }
                 }
-            }
-        }
+            },
+        )
 
-        if (state.isLoading && state.availableCoins.isEmpty()) {
-            Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxSize()) {
-                CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
-            }
-            return
-        }
+        when {
+            state.isLoading && state.availableCoins.isEmpty() -> SkeletonList(rows = 5, header = false)
 
-        if (state.error != null && state.availableCoins.isEmpty() && state.selectedCoin == null) {
-            Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxSize()) {
+            state.error != null && state.availableCoins.isEmpty() && state.selectedCoin == null -> Box(
+                contentAlignment = Alignment.Center,
+                modifier = Modifier.fillMaxSize().padding(Dimens.xl),
+            ) {
+                ErrorRetryCard(message = state.error!!.label(strings), onRetry = viewModel::loadCoins)
+            }
+
+            state.selectedCoin == null -> CoinPicker(
+                coins = state.availableCoins,
+                onSelect = viewModel::selectCoin,
+            )
+
+            state.candles.isEmpty() && state.error != null && !state.isLoading -> Box(
+                contentAlignment = Alignment.Center,
+                modifier = Modifier.fillMaxSize().padding(Dimens.xl),
+            ) {
                 ErrorRetryCard(
                     message = state.error!!.label(strings),
-                    onRetry = { viewModel.loadCoins() },
-                    modifier = Modifier.padding(24.dp),
+                    onRetry = { viewModel.selectCoin(state.selectedCoin!!) },
                 )
             }
-            return
-        }
 
-        LazyColumn(
-            modifier = Modifier.fillMaxSize().padding(horizontal = 12.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
-        ) {
-            // ── Coin Selection ──
-            if (state.selectedCoin == null) {
-                item { Text(strings.simulatorSelectCoinPrompt, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold) }
-                items(state.availableCoins) { coin ->
-                    FilterChip(
-                        selected = false,
-                        onClick = { viewModel.selectCoin(coin) },
-                        label = {
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                AsyncImage(coin.iconUrl, null, contentScale = ContentScale.Fit, modifier = Modifier.size(20.dp).clip(CircleShape))
-                                Spacer(Modifier.width(6.dp))
-                                Text("${coin.name} (${coin.symbol.uppercase()})", fontSize = 13.sp)
-                            }
-                        },
-                        modifier = Modifier.fillMaxWidth(),
-                    )
-                }
-            }
+            state.candles.isEmpty() -> SkeletonList(rows = 3)
 
-            if (state.selectedCoin != null && state.candles.isEmpty() && state.error != null && !state.isLoading) {
-                item {
-                    ErrorRetryCard(
-                        message = state.error!!.label(strings),
-                        onRetry = { viewModel.selectCoin(state.selectedCoin!!) },
-                        modifier = Modifier.padding(top = 24.dp),
-                    )
-                }
-            }
-
-            if (state.selectedCoin != null && state.candles.isNotEmpty()) {
-                val coin = state.selectedCoin!!
-                val candle = state.candles.getOrNull(state.currentCandleIndex)
-
-                // ── Coin info + Price ──
-                item {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        AsyncImage(coin.iconUrl, null, contentScale = ContentScale.Fit, modifier = Modifier.size(28.dp).clip(CircleShape))
-                        Spacer(Modifier.width(8.dp))
-                        Text("${coin.name} (${coin.symbol.uppercase()})", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-                        Spacer(Modifier.weight(1f))
-                        if (candle != null) {
-                            Column(horizontalAlignment = Alignment.End) {
-                                Text(
-                                    "$${candle.close}",
-                                    fontSize = 16.sp, fontFamily = FontFamily.Monospace, fontWeight = FontWeight.Bold,
-                                    color = MaterialTheme.colorScheme.onBackground
-                                )
-                                Text(
-                                    strings.simulatorCandleCounter(state.currentCandleIndex + 1, state.candles.size),
-                                    fontSize = 10.sp, color = SubtextGray,
-                                )
-                            }
-                        }
-                    }
-                }
-
-                // ── Playback Controls ──
-                item {
-                    Column(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                    ) {
-                        Row(
-                            horizontalArrangement = Arrangement.Center,
-                            verticalAlignment = Alignment.CenterVertically,
-                        ) {
-                            IconButton(onClick = { viewModel.stepBackward() }) {
-                                Icon(Icons.Default.SkipPrevious, strings.simulatorPrevContentDesc)
-                            }
-                            IconButton(onClick = { viewModel.togglePlay() }) {
-                                Icon(
-                                    if (state.isPlaying) Icons.Default.Pause else Icons.Default.PlayArrow,
-                                    if (state.isPlaying) strings.simulatorPauseContentDesc else strings.simulatorPlayContentDesc,
-                                )
-                            }
-                            IconButton(onClick = { viewModel.stepForward() }) {
-                                Icon(Icons.Default.SkipNext, strings.simulatorNextContentDesc)
-                            }
-                        }
-                        Spacer(Modifier.height(4.dp))
-                        Row(
-                            horizontalArrangement = Arrangement.spacedBy(6.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                        ) {
-                            PlaySpeed.entries.forEach { speed ->
-                                FilterChip(
-                                    selected = state.playSpeed == speed,
-                                    onClick = { viewModel.setPlaySpeed(speed) },
-                                    label = { Text(speed.label, fontSize = 10.sp) },
-                                )
-                            }
-                        }
-                    }
-                }
-
-                // ── Chart (Balance + Price) ──
-                item {
-                    val transform = remember(state.candles, state.currentCandleIndex) {
-                        val visibleRange = if (state.candles.size > 0) {
-                            val window = 60.coerceAtMost(state.candles.size)
-                            val start = (state.currentCandleIndex - window / 2).coerceIn(0, state.candles.size - window)
-                            val end = start + window
-                            start.toFloat() / state.candles.size to end.toFloat() / state.candles.size
-                        } else 0f to 1f
-                        ChartTransform(state.candles, visibleRange.first, visibleRange.second)
-                    }
-
-                    Box(modifier = Modifier.fillMaxWidth().height(200.dp)) {
-                        ChartGrid(transform = transform)
-                        CandlestickChart(
-                            transform = transform,
-                            bullColor = DarkProfitGreenColor,
-                            bearColor = DarkLossRedColor,
-                            chartHeightFraction = 0.7f,
-                        )
-
-                    }
-                }
-
-                // ── Balance / Equity ──
-                item {
-                    Row(
-                        modifier = Modifier.fillMaxWidth().height(IntrinsicSize.Max),
-                        horizontalArrangement = Arrangement.spacedBy(12.dp),
-                    ) {
-                        StatCard(strings.simulatorStatBalance, formatFiat(state.cashBalance), Modifier.weight(1f), size = StatCardSize.Compact)
-                        StatCard(strings.simulatorStatEquity, formatFiat(state.equity), Modifier.weight(1f), DarkProfitGreenColor, size = StatCardSize.Compact)
-                        val pnl = state.equity - state.initialBalance
-                        StatCard(strings.simulatorStatPnl, formatFiat(pnl), Modifier.weight(1f), if (pnl >= 0) DarkProfitGreenColor else DarkLossRedColor, size = StatCardSize.Compact)
-                    }
-                }
-
-                // ── Order Form ──
-                item {
-                    Card(
-                        modifier = Modifier.fillMaxWidth(),
-                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-                        shape = RoundedCornerShape(16.dp),
-                    ) {
-                        Column(modifier = Modifier.padding(16.dp)) {
-                            Text(strings.simulatorNewPositionTitle, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
-                            Spacer(Modifier.height(8.dp))
-                            // Side selector
-                            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                                OrderSideInput.entries.forEach { side ->
-                                    FilterChip(
-                                        selected = state.orderSide == side,
-                                        onClick = { viewModel.onOrderSideChanged(side) },
-                                        label = { Text(side.label) },
-                                        colors = FilterChipDefaults.filterChipColors(
-                                            selectedContainerColor = if (side == OrderSideInput.LONG)
-                                                DarkProfitGreenColor.copy(alpha = 0.2f)
-                                            else DarkLossRedColor.copy(alpha = 0.2f),
-                                            selectedLabelColor = if (side == OrderSideInput.LONG)
-                                                DarkProfitGreenColor else DarkLossRedColor,
-                                        ),
-                                    )
-                                }
-                            }
-                            Spacer(Modifier.height(12.dp))
-                            // Amount + Leverage
-                            Row(
-                                horizontalArrangement = Arrangement.spacedBy(10.dp),
-                                modifier = Modifier.fillMaxWidth(),
-                            ) {
-                                OrderField(
-                                    label = strings.simulatorAmountLabel,
-                                    value = state.orderAmount,
-                                    onValueChange = { viewModel.onOrderAmountChanged(it) },
-                                    modifier = Modifier.weight(1f),
-                                )
-                                OrderField(
-                                    label = strings.simulatorLeverageLabel,
-                                    value = state.orderLeverage,
-                                    onValueChange = { viewModel.onOrderLeverageChanged(it) },
-                                    modifier = Modifier.weight(1f),
-                                )
-                            }
-                            // Liquidation price preview — leverage means a much smaller
-                            // adverse move can wipe the margin than beginners tend to expect.
-                            val previewLeverage = state.orderLeverage.toDoubleOrNull()?.coerceAtLeast(1.0) ?: 1.0
-                            val previewEntry = state.candles.getOrNull(state.currentCandleIndex)?.close
-                            if (previewLeverage > 1.0 && previewEntry != null) {
-                                val move = previewEntry / previewLeverage
-                                val liqPreview = if (state.orderSide == OrderSideInput.LONG)
-                                    (previewEntry - move).coerceAtLeast(0.0) else previewEntry + move
-                                Row(
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    modifier = Modifier
-                                        .padding(top = 8.dp)
-                                        .fillMaxWidth()
-                                        .background(DarkLossRedColor.copy(alpha = 0.1f), RoundedCornerShape(8.dp))
-                                        .padding(horizontal = 10.dp, vertical = 6.dp),
-                                ) {
-                                    Icon(Icons.Default.Warning, null, tint = DarkLossRedColor, modifier = Modifier.size(14.dp))
-                                    Spacer(Modifier.width(6.dp))
-                                    Text(
-                                        text = strings.simulatorLiquidatesAt(formatFiat(liqPreview), fmtDec(100.0 / previewLeverage, 1)),
-                                        color = DarkLossRedColor,
-                                        fontSize = 11.sp,
-                                    )
-                                }
-                            }
-                            Spacer(Modifier.height(10.dp))
-                            // Stop-Loss + Take-Profit
-                            Row(
-                                horizontalArrangement = Arrangement.spacedBy(10.dp),
-                                modifier = Modifier.fillMaxWidth(),
-                            ) {
-                                OrderField(
-                                    label = strings.simulatorStopLossLabel,
-                                    value = state.orderStopLoss,
-                                    onValueChange = { viewModel.onOrderSLChanged(it) },
-                                    accentColor = DarkLossRedColor,
-                                    modifier = Modifier.weight(1f),
-                                )
-                                OrderField(
-                                    label = strings.simulatorTakeProfitLabel,
-                                    value = state.orderTakeProfit,
-                                    onValueChange = { viewModel.onOrderTPChanged(it) },
-                                    accentColor = DarkProfitGreenColor,
-                                    modifier = Modifier.weight(1f),
-                                )
-                            }
-                            Spacer(Modifier.height(14.dp))
-                            Button(
-                                onClick = { viewModel.openPosition() },
-                                modifier = Modifier.fillMaxWidth(),
-                                colors = ButtonDefaults.buttonColors(
-                                    containerColor = if (state.orderSide == OrderSideInput.LONG)
-                                        DarkProfitGreenColor else DarkLossRedColor,
-                                ),
-                                shape = RoundedCornerShape(12.dp),
-                            ) {
-                                Text(
-                                    if (state.orderSide == OrderSideInput.LONG) strings.simulatorLongAtMarket else strings.simulatorShortAtMarket,
-                                    color = Color.White,
-                                )
-                            }
-                        }
-                    }
-                }
-
-                // ── Open Positions ──
-                if (state.positions.isNotEmpty()) {
-                    item {
-                        Text(strings.simulatorOpenPositions(state.positions.size), style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
-                    }
-                    items(state.positions, key = { it.id }) { pos ->
-                        PositionCard(pos = pos, onClose = { viewModel.closePosition(pos.id) })
-                    }
-                }
-
-                // ── Hint Banner ──
-                if (state.activeHint != null) {
-                    item {
-                        Box(
-                            modifier = Modifier.fillMaxWidth()
-                                .background(Color(0xFFFFA500).copy(alpha = 0.1f), RoundedCornerShape(12.dp))
-                                .clickable { viewModel.nextHint() }
-                                .padding(12.dp)
-                        ) {
-                            Text(state.activeHint!!, fontSize = 12.sp, color = Color(0xFFFFA500))
-                        }
-                    }
-                }
-
-                // ── Metrics ──
-                if (state.closedTrades.isNotEmpty()) {
-                    val m = state.metrics
-                    item { Text(strings.simulatorMetricsTitle, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold) }
-                    item {
-                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth().height(IntrinsicSize.Max)) {
-                            StatCard(strings.simulatorMetricWinRate, "${fmtDec(m.winRate * 100, 0)}%", Modifier.weight(1f), size = StatCardSize.Compact, monospaceValue = true)
-                            StatCard(strings.simulatorMetricProfitFactor, fmtDec(m.profitFactor, 2), Modifier.weight(1f), size = StatCardSize.Compact, monospaceValue = true)
-                            StatCard(strings.simulatorMetricTrades, "${m.totalTrades}", Modifier.weight(1f), size = StatCardSize.Compact, monospaceValue = true)
-                        }
-                    }
-                    item {
-                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth().height(IntrinsicSize.Max)) {
-                            StatCard(strings.simulatorMetricMaxDD, "$${fmtDec(m.maxDrawdown, 0)}", Modifier.weight(1f), DarkLossRedColor, size = StatCardSize.Compact, monospaceValue = true)
-                            StatCard(strings.simulatorMetricBest, "$${fmtDec(m.bestTrade, 0)}", Modifier.weight(1f), DarkProfitGreenColor, size = StatCardSize.Compact, monospaceValue = true)
-                            StatCard(strings.simulatorMetricSharpe, fmtDec(m.sharpeRatio, 2), Modifier.weight(1f), size = StatCardSize.Compact, monospaceValue = true)
-                        }
-                    }
-                }
-
-                // ── Closed Trades ──
-                if (state.closedTrades.isNotEmpty()) {
-                    item { Text(strings.simulatorTradeHistoryTitle, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold) }
-                    items(state.closedTrades.reversed()) { trade ->
-                        ClosedTradeCard(trade)
-                    }
-                }
-
-                // ── Bottom spacer for nav bar ──
-                item { Spacer(Modifier.height(80.dp)) }
-            }
+            else -> SimulationContent(state = state, viewModel = viewModel)
         }
     }
 }
 
 @Composable
-private fun PositionCard(pos: SimPosition, onClose: () -> Unit) {
+private fun CoinPicker(coins: List<Coin>, onSelect: (Coin) -> Unit) {
     val strings = appStrings()
-    val pnlColor = if (pos.pnl >= 0) DarkProfitGreenColor else DarkLossRedColor
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-        shape = RoundedCornerShape(12.dp),
+    LazyColumn(
+        modifier = Modifier.fillMaxSize(),
+        contentPadding = screenContentPadding(top = 0.dp),
+        verticalArrangement = Arrangement.spacedBy(Dimens.itemGap),
     ) {
-        Column(modifier = Modifier.padding(12.dp)) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Text(
-                    "${pos.side.name} ${pos.coinSymbol.uppercase()}",
-                    style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold,
-                )
-                Spacer(Modifier.weight(1f))
-                Text("$${pos.amountInFiat.toInt()}", fontSize = 13.sp, color = SubtextGray)
-            }
-            Spacer(Modifier.height(4.dp))
-            Row {
-                Text(strings.simulatorEntryLabel(formatFiat(pos.entryPrice)), fontSize = 12.sp, color = SubtextGray)
-                Spacer(Modifier.width(12.dp))
-                Text(strings.simulatorNowLabel(formatFiat(pos.currentPrice)), fontSize = 12.sp, color = SubtextGray)
-                Spacer(Modifier.weight(1f))
-                Text(strings.simulatorPnlLine(fmtDec(pos.pnl, 0), fmtDec(pos.pnlPercent, 1)),
-                    fontSize = 13.sp, fontWeight = FontWeight.Bold, color = pnlColor)
-            }
-            if (pos.stopLoss != null || pos.takeProfit != null) {
-                Spacer(Modifier.height(2.dp))
-                Row {
-                    if (pos.stopLoss != null) Text(strings.simulatorSlLabel(formatFiat(pos.stopLoss)), fontSize = 11.sp, color = DarkLossRedColor)
-                    Spacer(Modifier.width(12.dp))
-                    if (pos.takeProfit != null) Text(strings.simulatorTpLabel(formatFiat(pos.takeProfit)), fontSize = 11.sp, color = DarkProfitGreenColor)
-                }
-            }
-            Spacer(Modifier.height(4.dp))
-            Button(
-                onClick = onClose,
-                colors = ButtonDefaults.buttonColors(containerColor = pnlColor.copy(alpha = 0.2f)),
-                contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp),
-                modifier = Modifier.align(Alignment.End),
+        item {
+            KBCard(
+                modifier = Modifier.fillMaxWidth(),
+                color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.55f),
+                border = null,
+                contentPadding = PaddingValues(Dimens.lg),
             ) {
-                Text(strings.simulatorCloseButton, fontSize = 12.sp, color = pnlColor)
+                Row(verticalAlignment = Alignment.Top) {
+                    IconBadge(Icons.AutoMirrored.Filled.TrendingUp, size = 44.dp, iconSize = 22.dp)
+                    Spacer(Modifier.width(Dimens.md))
+                    Text(
+                        strings.simulatorIntro,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurface,
+                    )
+                }
+            }
+        }
+        item { SectionHeader(title = strings.simulatorSelectCoinPrompt.trimEnd(':')) }
+        items(coins, key = { it.id }) { coin ->
+            KBCard(
+                modifier = Modifier.fillMaxWidth().animateItem(),
+                onClick = { onSelect(coin) },
+                contentPadding = PaddingValues(horizontal = Dimens.md, vertical = Dimens.sm),
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    CoinAvatar(iconUrl = coin.iconUrl, symbol = coin.symbol, size = 38.dp)
+                    Spacer(Modifier.width(Dimens.sm))
+                    Column(Modifier.weight(1f)) {
+                        Text(coin.name, style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.onSurface)
+                        Text(
+                            coin.symbol.uppercase(),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                    Icon(
+                        Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
             }
         }
     }
 }
 
 @Composable
-private fun ClosedTradeCard(trade: ClosedTrade) {
+private fun SimulationContent(state: SimulatorState, viewModel: SimulatorViewModel) {
     val strings = appStrings()
-    val pnlColor = if (trade.pnl >= 0) DarkProfitGreenColor else DarkLossRedColor
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-        shape = RoundedCornerShape(10.dp),
+    val candle = state.candles.getOrNull(state.currentCandleIndex)
+    val firstClose = state.candles.firstOrNull()?.close ?: 0.0
+
+    LazyColumn(
+        modifier = Modifier.fillMaxSize(),
+        contentPadding = screenContentPadding(top = 0.dp),
+        verticalArrangement = Arrangement.spacedBy(Dimens.md),
     ) {
-        Row(modifier = Modifier.padding(10.dp), verticalAlignment = Alignment.CenterVertically) {
+        // ── Price + chart + playback ──
+        item {
+            KBCard(modifier = Modifier.fillMaxWidth(), contentPadding = PaddingValues(Dimens.md)) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Column(Modifier.weight(1f)) {
+                        Text(
+                            candle?.let { formatFiat(it.close) } ?: "—",
+                            style = MaterialTheme.typography.headlineMedium.tabular(),
+                            color = MaterialTheme.colorScheme.onSurface,
+                        )
+                        Text(
+                            strings.simulatorCandleCounter(state.currentCandleIndex + 1, state.candles.size),
+                            style = MaterialTheme.typography.labelMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                    if (candle != null && firstClose > 0) {
+                        val change = (candle.close - firstClose) / firstClose * 100
+                        ChangePill("${fmtDec(change, 2)}%", isPositive = change >= 0)
+                    }
+                }
+
+                Spacer(Modifier.height(Dimens.sm))
+                val transform = remember(state.candles, state.currentCandleIndex) {
+                    val window = 60.coerceAtMost(state.candles.size)
+                    val start = (state.currentCandleIndex - window / 2).coerceIn(0, state.candles.size - window)
+                    val end = start + window
+                    ChartTransform(state.candles, start.toFloat() / state.candles.size, end.toFloat() / state.candles.size)
+                }
+                Box(modifier = Modifier.fillMaxWidth().height(230.dp)) {
+                    ChartGrid(transform = transform)
+                    CandlestickChart(
+                        transform = transform,
+                        bullColor = KBTheme.colors.profitGreen,
+                        bearColor = KBTheme.colors.lossRed,
+                        chartHeightFraction = 0.86f,
+                    )
+                }
+
+                val progress by animateFloatAsState(
+                    (state.currentCandleIndex + 1).toFloat() / state.candles.size.coerceAtLeast(1),
+                    label = "replayProgress",
+                )
+                LinearProgressIndicator(
+                    progress = { progress },
+                    modifier = Modifier.fillMaxWidth().height(4.dp).clip(RoundedCornerShape(2.dp)),
+                    color = MaterialTheme.colorScheme.primary,
+                    trackColor = MaterialTheme.colorScheme.surfaceVariant,
+                    strokeCap = StrokeCap.Round,
+                    gapSize = 0.dp,
+                    drawStopIndicator = {},
+                )
+
+                Spacer(Modifier.height(Dimens.sm))
+                PlaybackControls(state = state, viewModel = viewModel)
+            }
+        }
+
+        // ── Account ──
+        item {
+            // Round to cents to hide floating point noise.
+            val pnl = round((state.equity - state.initialBalance) * 100) / 100
+            Row(
+                modifier = Modifier.fillMaxWidth().height(IntrinsicSize.Max),
+                horizontalArrangement = Arrangement.spacedBy(Dimens.itemGap),
+            ) {
+                StatCard(strings.simulatorStatBalance, formatFiat(state.cashBalance), Modifier.weight(1f), size = StatCardSize.Compact)
+                StatCard(strings.simulatorStatEquity, formatFiat(state.equity), Modifier.weight(1f), size = StatCardSize.Compact)
+                StatCard(strings.simulatorStatPnl, formatFiat(pnl), Modifier.weight(1f), KBTheme.trend(pnl >= 0), size = StatCardSize.Compact)
+            }
+        }
+
+        // ── Hint ──
+        if (state.activeHint != null) {
+            item {
+                Row(
+                    verticalAlignment = Alignment.Top,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(Dimens.tileRadius))
+                        .background(KBTheme.colors.warningContainer)
+                        .clickable(onClick = viewModel::nextHint)
+                        .padding(Dimens.md),
+                ) {
+                    Icon(Icons.Default.Lightbulb, strings.simulatorHintContentDesc, tint = KBTheme.colors.warning, modifier = Modifier.size(20.dp))
+                    Spacer(Modifier.width(Dimens.sm))
+                    Text(state.activeHint.removePrefix("💡").trim(), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurface)
+                }
+            }
+        }
+
+        // ── Order form ──
+        item { OrderForm(state = state, viewModel = viewModel) }
+
+        // ── Open positions ──
+        if (state.positions.isNotEmpty()) {
+            item { SectionHeader(title = strings.simulatorOpenPositions(state.positions.size)) }
+            items(state.positions, key = { it.id }) { pos ->
+                PositionCard(pos = pos, onClose = { viewModel.closePosition(pos.id) }, modifier = Modifier.animateItem())
+            }
+        }
+
+        // ── Metrics ──
+        if (state.closedTrades.isNotEmpty()) {
+            val m = state.metrics
+            item { SectionHeader(title = strings.simulatorMetricsTitle) }
+            item {
+                Column(verticalArrangement = Arrangement.spacedBy(Dimens.itemGap)) {
+                    Row(horizontalArrangement = Arrangement.spacedBy(Dimens.itemGap), modifier = Modifier.fillMaxWidth().height(IntrinsicSize.Max)) {
+                        StatCard(strings.simulatorMetricWinRate, "${fmtDec(m.winRate * 100, 0)}%", Modifier.weight(1f), MaterialTheme.colorScheme.primary, size = StatCardSize.Compact)
+                        StatCard(strings.simulatorMetricProfitFactor, fmtDec(m.profitFactor, 2), Modifier.weight(1f), size = StatCardSize.Compact)
+                        StatCard(strings.simulatorMetricTrades, "${m.totalTrades}", Modifier.weight(1f), size = StatCardSize.Compact)
+                    }
+                    Row(horizontalArrangement = Arrangement.spacedBy(Dimens.itemGap), modifier = Modifier.fillMaxWidth().height(IntrinsicSize.Max)) {
+                        StatCard(strings.simulatorMetricMaxDD, formatFiat(m.maxDrawdown), Modifier.weight(1f), KBTheme.colors.lossRed, size = StatCardSize.Compact)
+                        StatCard(strings.simulatorMetricBest, formatFiat(m.bestTrade), Modifier.weight(1f), KBTheme.colors.profitGreen, size = StatCardSize.Compact)
+                        StatCard(strings.simulatorMetricSharpe, fmtDec(m.sharpeRatio, 2), Modifier.weight(1f), size = StatCardSize.Compact)
+                    }
+                }
+            }
+            item { SectionHeader(title = strings.simulatorTradeHistoryTitle) }
+            items(state.closedTrades.reversed(), key = { "closed-${it.id}" }) { trade ->
+                ClosedTradeCard(trade, modifier = Modifier.animateItem())
+            }
+        }
+    }
+}
+
+@Composable
+private fun PlaybackControls(state: SimulatorState, viewModel: SimulatorViewModel) {
+    val strings = appStrings()
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        IconButton(onClick = viewModel::stepBackward) {
+            Icon(Icons.Default.SkipPrevious, strings.simulatorPrevContentDesc)
+        }
+        FilledIconButton(
+            onClick = viewModel::togglePlay,
+            modifier = Modifier.size(52.dp),
+            colors = IconButtonDefaults.filledIconButtonColors(
+                containerColor = MaterialTheme.colorScheme.primary,
+                contentColor = MaterialTheme.colorScheme.onPrimary,
+            ),
+        ) {
             Icon(
-                if (trade.side == PositionSide.LONG) Icons.Default.TrendingUp else Icons.Default.TrendingDown,
-                null, tint = pnlColor, modifier = Modifier.size(20.dp),
+                if (state.isPlaying) Icons.Default.Pause else Icons.Default.PlayArrow,
+                if (state.isPlaying) strings.simulatorPauseContentDesc else strings.simulatorPlayContentDesc,
+                modifier = Modifier.size(28.dp),
             )
-            Spacer(Modifier.width(8.dp))
-            Column(modifier = Modifier.weight(1f)) {
-                Text("${trade.side.name} ${trade.coinName}", fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
-                Text(strings.simulatorEntryExitLabel(formatFiat(trade.entryPrice), formatFiat(trade.exitPrice)), fontSize = 11.sp, color = SubtextGray)
+        }
+        IconButton(onClick = viewModel::stepForward) {
+            Icon(Icons.Default.SkipNext, strings.simulatorNextContentDesc)
+        }
+        Spacer(Modifier.weight(1f))
+        Segmented(
+            options = PlaySpeed.entries,
+            selected = state.playSpeed,
+            label = { it.label },
+            onSelect = viewModel::setPlaySpeed,
+            accent = MaterialTheme.colorScheme.primary,
+            modifier = Modifier.width(200.dp),
+        )
+    }
+}
+
+@Composable
+private fun <T> Segmented(
+    options: List<T>,
+    selected: T,
+    label: (T) -> String,
+    onSelect: (T) -> Unit,
+    accent: Color,
+    modifier: Modifier = Modifier,
+    selectedAccent: (T) -> Color = { accent },
+    height: androidx.compose.ui.unit.Dp = 34.dp,
+) {
+    Row(
+        modifier = modifier
+            .clip(RoundedCornerShape(12.dp))
+            .background(MaterialTheme.colorScheme.surfaceVariant)
+            .padding(3.dp),
+        horizontalArrangement = Arrangement.spacedBy(3.dp),
+    ) {
+        options.forEach { option ->
+            val isSelected = option == selected
+            val color = selectedAccent(option)
+            val bg by animateColorAsState(
+                if (isSelected) color.copy(alpha = 0.18f) else Color.Transparent,
+                label = "segment",
+            )
+            Box(
+                contentAlignment = Alignment.Center,
+                modifier = Modifier
+                    .weight(1f)
+                    .height(height)
+                    .clip(RoundedCornerShape(9.dp))
+                    .background(bg)
+                    .clickable(role = Role.Tab) { onSelect(option) },
+            ) {
+                Text(
+                    label(option),
+                    style = MaterialTheme.typography.labelLarge,
+                    color = if (isSelected) color else MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 1,
+                )
             }
-            Column(horizontalAlignment = Alignment.End) {
-                Text("${fmtDec(trade.pnl, 0)} (${fmtDec(trade.pnlPercent, 1)}%)",
-                    fontSize = 13.sp, fontWeight = FontWeight.Bold, color = pnlColor)
-                Text(trade.exitReason.name, fontSize = 10.sp, color = SubtextGray)
+        }
+    }
+}
+
+@Composable
+private fun OrderForm(state: SimulatorState, viewModel: SimulatorViewModel) {
+    val strings = appStrings()
+    val isLong = state.orderSide == OrderSideInput.LONG
+    val sideColor = KBTheme.trend(isLong)
+    val longColor = KBTheme.colors.profitGreen
+    val shortColor = KBTheme.colors.lossRed
+
+    KBCard(modifier = Modifier.fillMaxWidth(), contentPadding = PaddingValues(Dimens.md)) {
+        Text(strings.simulatorNewPositionTitle, style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurface)
+        Spacer(Modifier.height(Dimens.sm))
+        Segmented(
+            options = OrderSideInput.entries,
+            selected = state.orderSide,
+            label = { it.label },
+            onSelect = viewModel::onOrderSideChanged,
+            accent = sideColor,
+            selectedAccent = { if (it == OrderSideInput.LONG) longColor else shortColor },
+            height = 40.dp,
+            modifier = Modifier.fillMaxWidth(),
+        )
+        Spacer(Modifier.height(Dimens.sm))
+        Row(horizontalArrangement = Arrangement.spacedBy(Dimens.itemGap)) {
+            OrderField(strings.simulatorAmountLabel, state.orderAmount, viewModel::onOrderAmountChanged, Modifier.weight(1f))
+            OrderField(strings.simulatorLeverageLabel, state.orderLeverage, viewModel::onOrderLeverageChanged, Modifier.weight(1f))
+        }
+
+        // Leverage shrinks the adverse move that wipes out the margin; show where that is.
+        val previewLeverage = state.orderLeverage.toDoubleOrNull()?.coerceAtLeast(1.0) ?: 1.0
+        val previewEntry = state.candles.getOrNull(state.currentCandleIndex)?.close
+        if (previewLeverage > 1.0 && previewEntry != null) {
+            val move = previewEntry / previewLeverage
+            val liqPreview = if (isLong) (previewEntry - move).coerceAtLeast(0.0) else previewEntry + move
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier
+                    .padding(top = Dimens.xs)
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(10.dp))
+                    .background(KBTheme.colors.lossContainer)
+                    .padding(horizontal = Dimens.sm, vertical = Dimens.xs),
+            ) {
+                Icon(Icons.Default.Warning, null, tint = KBTheme.colors.lossRed, modifier = Modifier.size(16.dp))
+                Spacer(Modifier.width(6.dp))
+                Text(
+                    strings.simulatorLiquidatesAt(formatFiat(liqPreview), fmtDec(100.0 / previewLeverage, 1)),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurface,
+                )
             }
+        }
+
+        Spacer(Modifier.height(Dimens.sm))
+        Row(horizontalArrangement = Arrangement.spacedBy(Dimens.itemGap)) {
+            OrderField(strings.simulatorStopLossLabel, state.orderStopLoss, viewModel::onOrderSLChanged, Modifier.weight(1f), accent = KBTheme.colors.lossRed)
+            OrderField(strings.simulatorTakeProfitLabel, state.orderTakeProfit, viewModel::onOrderTPChanged, Modifier.weight(1f), accent = KBTheme.colors.profitGreen)
+        }
+        Spacer(Modifier.height(Dimens.md))
+        Button(
+            onClick = viewModel::openPosition,
+            modifier = Modifier.fillMaxWidth().height(52.dp),
+            colors = ButtonDefaults.buttonColors(
+                containerColor = sideColor,
+                contentColor = if (isLong) MaterialTheme.colorScheme.onPrimary else Color.White,
+            ),
+        ) {
+            Icon(
+                if (isLong) Icons.AutoMirrored.Filled.TrendingUp else Icons.AutoMirrored.Filled.TrendingDown,
+                contentDescription = null,
+                modifier = Modifier.size(18.dp),
+            )
+            Spacer(Modifier.width(Dimens.xs))
+            Text(if (isLong) strings.simulatorLongAtMarket else strings.simulatorShortAtMarket, style = MaterialTheme.typography.titleSmall)
         }
     }
 }
@@ -504,24 +518,122 @@ private fun OrderField(
     value: String,
     onValueChange: (String) -> Unit,
     modifier: Modifier = Modifier,
-    accentColor: Color? = null,
+    accent: Color = MaterialTheme.colorScheme.primary,
+    prefix: String? = null,
+    suffix: String? = null,
 ) {
-    OutlinedTextField(
+    TextField(
         value = value,
         onValueChange = onValueChange,
-        label = { Text(label, fontSize = 12.sp) },
+        label = { Text(label, maxLines = 1, overflow = TextOverflow.Ellipsis) },
+        prefix = prefix?.let { { Text(it) } },
+        suffix = suffix?.let { { Text(it) } },
         singleLine = true,
-        shape = RoundedCornerShape(10.dp),
-        textStyle = TextStyle(fontSize = 14.sp),
-        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-        modifier = modifier.height(56.dp),
-        colors = OutlinedTextFieldDefaults.colors(
-            focusedBorderColor = accentColor ?: MaterialTheme.colorScheme.primary,
-            unfocusedBorderColor = MaterialTheme.colorScheme.outline,
-            focusedLabelColor = accentColor ?: MaterialTheme.colorScheme.primary,
-            unfocusedLabelColor = SubtextGray,
-            cursorColor = accentColor ?: MaterialTheme.colorScheme.primary,
+        textStyle = MaterialTheme.typography.titleSmall.tabular(),
+        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+        shape = RoundedCornerShape(Dimens.controlRadius),
+        modifier = modifier,
+        colors = TextFieldDefaults.colors(
+            focusedContainerColor = MaterialTheme.colorScheme.surfaceVariant,
+            unfocusedContainerColor = MaterialTheme.colorScheme.surfaceVariant,
+            focusedIndicatorColor = Color.Transparent,
+            unfocusedIndicatorColor = Color.Transparent,
+            focusedLabelColor = accent,
+            cursorColor = accent,
         ),
     )
 }
 
+@Composable
+private fun PositionCard(pos: SimPosition, onClose: () -> Unit, modifier: Modifier = Modifier) {
+    val strings = appStrings()
+    val isLong = pos.side == PositionSide.LONG
+    KBCard(modifier = modifier.fillMaxWidth(), contentPadding = PaddingValues(Dimens.md)) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Tag(pos.side.name, color = KBTheme.trend(isLong))
+            Spacer(Modifier.width(Dimens.xs))
+            Text(pos.coinSymbol.uppercase(), style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.onSurface)
+            Spacer(Modifier.width(Dimens.xs))
+            Text(
+                formatFiat(pos.amountInFiat),
+                style = MaterialTheme.typography.bodySmall.tabular(),
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            Spacer(Modifier.weight(1f))
+            Column(horizontalAlignment = Alignment.End) {
+                Text(
+                    formatFiat(pos.pnl),
+                    style = MaterialTheme.typography.titleSmall.tabular(),
+                    color = KBTheme.trend(pos.pnl >= 0),
+                )
+                ChangePill("${fmtDec(pos.pnlPercent, 1)}%", isPositive = pos.pnl >= 0, filled = false)
+            }
+        }
+        Spacer(Modifier.height(Dimens.xs))
+        Row(horizontalArrangement = Arrangement.spacedBy(Dimens.sm)) {
+            MiniFigure(strings.simulatorEntryLabel(formatFiat(pos.entryPrice)))
+            MiniFigure(strings.simulatorNowLabel(formatFiat(pos.currentPrice)))
+        }
+        if (pos.stopLoss != null || pos.takeProfit != null) {
+            Spacer(Modifier.height(4.dp))
+            Row(horizontalArrangement = Arrangement.spacedBy(Dimens.sm)) {
+                if (pos.stopLoss != null) MiniFigure(strings.simulatorSlLabel(formatFiat(pos.stopLoss)), KBTheme.colors.lossRed)
+                if (pos.takeProfit != null) MiniFigure(strings.simulatorTpLabel(formatFiat(pos.takeProfit)), KBTheme.colors.profitGreen)
+            }
+        }
+        Spacer(Modifier.height(Dimens.sm))
+        OutlinedButton(onClick = onClose, modifier = Modifier.fillMaxWidth().height(40.dp)) {
+            Icon(Icons.Default.Close, contentDescription = null, modifier = Modifier.size(16.dp))
+            Spacer(Modifier.width(6.dp))
+            Text(strings.simulatorCloseButton, style = MaterialTheme.typography.labelLarge)
+        }
+    }
+}
+
+@Composable
+private fun RowScope.MiniFigure(text: String, color: Color = MaterialTheme.colorScheme.onSurfaceVariant) {
+    Text(text, style = MaterialTheme.typography.bodySmall.tabular(), color = color)
+}
+
+@Composable
+private fun ClosedTradeCard(trade: ClosedTrade, modifier: Modifier = Modifier) {
+    val strings = appStrings()
+    val won = trade.pnl >= 0
+    KBCard(
+        modifier = modifier.fillMaxWidth(),
+        contentPadding = PaddingValues(horizontal = Dimens.md, vertical = Dimens.sm),
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            IconBadge(
+                icon = if (trade.side == PositionSide.LONG) Icons.AutoMirrored.Filled.TrendingUp else Icons.AutoMirrored.Filled.TrendingDown,
+                tint = KBTheme.trend(won),
+                shape = CircleShape,
+                size = 36.dp,
+                iconSize = 18.dp,
+            )
+            Spacer(Modifier.width(Dimens.sm))
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    "${trade.side.name} ${trade.coinName}",
+                    style = MaterialTheme.typography.titleSmall,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+                Text(
+                    strings.simulatorEntryExitLabel(formatFiat(trade.entryPrice), formatFiat(trade.exitPrice)),
+                    style = MaterialTheme.typography.bodySmall.tabular(),
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+            Column(horizontalAlignment = Alignment.End) {
+                Text(formatFiat(trade.pnl), style = MaterialTheme.typography.titleSmall.tabular(), color = KBTheme.trend(won))
+                Text(
+                    strings.simulatorExitReason(trade.exitReason.name),
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+        }
+    }
+}
