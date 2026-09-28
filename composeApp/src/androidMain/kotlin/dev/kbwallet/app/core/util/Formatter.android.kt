@@ -9,7 +9,8 @@ actual fun formatFiat(amount: Double, showDecimal: Boolean): String {
         absAmount == 0.0 || absAmount >= 0.01 -> java.text.DecimalFormat("#,##0.00")
         else -> java.text.DecimalFormat("0.00######")
     }
-    return "$ " + formatter.format(amount)
+    val sign = if (amount < 0 && formatter.format(absAmount) != formatter.format(0.0)) "-" else ""
+    return "$sign$ " + formatter.format(absAmount)
 }
 
 actual fun formatCoinUnit(amount: Double, symbol: String): String {

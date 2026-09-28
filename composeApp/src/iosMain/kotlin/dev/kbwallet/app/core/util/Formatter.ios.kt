@@ -22,8 +22,9 @@ actual fun formatFiat(amount: Double, showDecimal: Boolean): String {
             numberFormatter.maximumFractionDigits = 8.toULong()
         }
     }
-    val formatterAmount = numberFormatter.stringFromNumber(NSNumber(amount))
-    return if (formatterAmount != null) "$ $formatterAmount" else ""
+    val formatterAmount = numberFormatter.stringFromNumber(NSNumber(absAmount)) ?: return ""
+    val sign = if (amount < 0 && formatterAmount != numberFormatter.stringFromNumber(NSNumber(0.0))) "-" else ""
+    return "$sign$ $formatterAmount"
 }
 
 actual fun formatCoinUnit(amount: Double, symbol: String): String {
