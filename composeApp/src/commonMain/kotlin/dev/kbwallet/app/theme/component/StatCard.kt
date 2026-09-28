@@ -1,6 +1,7 @@
 package dev.kbwallet.app.theme.component
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -11,14 +12,16 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import dev.kbwallet.app.theme.KBTheme
+import dev.kbwallet.app.theme.tabular
 
 /**
  * Shared "stat tile" — the small metric cards used on Dashboard, History,
@@ -46,28 +49,33 @@ fun StatCard(
     modifier: Modifier = Modifier,
     valueColor: Color = MaterialTheme.colorScheme.onBackground,
     size: StatCardSize = StatCardSize.Regular,
-    monospaceValue: Boolean = false,
+    // Deprecated: values always use tabular figures now.
+    @Suppress("UNUSED_PARAMETER") monospaceValue: Boolean = false,
 ) {
+    val shape = RoundedCornerShape(size.cornerRadius)
     Box(
         modifier = modifier
             .fillMaxHeight()
-            .background(MaterialTheme.colorScheme.surface, RoundedCornerShape(size.cornerRadius))
+            .clip(shape)
+            .background(MaterialTheme.colorScheme.surface)
+            .border(1.dp, KBTheme.colors.hairline, shape)
             .padding(size.padding)
     ) {
         Column(verticalArrangement = Arrangement.spacedBy(size.titleValueGap)) {
             Text(
                 text = title,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
+                style = MaterialTheme.typography.labelMedium,
                 fontSize = size.titleFontSize,
                 maxLines = 2,
-                lineHeight = size.titleFontSize * 1.2f, // Ensure readable line height if it wraps
+                lineHeight = size.titleFontSize * 1.25f, // Ensure readable line height if it wraps
                 overflow = TextOverflow.Ellipsis,
             )
             Text(
                 text = value,
+                style = MaterialTheme.typography.titleLarge.tabular(),
                 fontSize = size.valueFontSize,
-                fontWeight = FontWeight.Bold,
-                fontFamily = if (monospaceValue) FontFamily.Monospace else FontFamily.Default,
+                fontWeight = FontWeight.ExtraBold,
                 color = valueColor,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
@@ -84,8 +92,8 @@ enum class StatCardSize(
     val valueFontSize: TextUnit,
 ) {
     /** Dashboard, History, Profile, P&L — three cards per row. */
-    Regular(padding = 16.dp, cornerRadius = 16.dp, titleValueGap = 4.dp, titleFontSize = 12.sp, valueFontSize = 18.sp),
+    Regular(padding = 16.dp, cornerRadius = 18.dp, titleValueGap = 6.dp, titleFontSize = 12.sp, valueFontSize = 19.sp),
 
     /** Simulator's denser grids (up to six cards across two rows). */
-    Compact(padding = 10.dp, cornerRadius = 12.dp, titleValueGap = 2.dp, titleFontSize = 11.sp, valueFontSize = 15.sp),
+    Compact(padding = 12.dp, cornerRadius = 14.dp, titleValueGap = 3.dp, titleFontSize = 11.sp, valueFontSize = 15.sp),
 }
