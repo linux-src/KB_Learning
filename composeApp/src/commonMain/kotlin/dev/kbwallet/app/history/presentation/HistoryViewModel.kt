@@ -33,11 +33,11 @@ class HistoryViewModel(
 
     init {
         viewModelScope.launch {
-            val totalTrades = portfolioRepository.getTotalTradeCount()
-            val totalBuy = portfolioRepository.getTotalBuyCount()
-            val totalSell = portfolioRepository.getTotalSellCount()
-
             portfolioRepository.getAllTransactions().collect { transactions ->
+                // Recount on every emission so the stats follow new trades.
+                val totalTrades = portfolioRepository.getTotalTradeCount()
+                val totalBuy = portfolioRepository.getTotalBuyCount()
+                val totalSell = portfolioRepository.getTotalSellCount()
                 val uiTransactions = transactions.map { entity ->
                     val instant = Instant.fromEpochMilliseconds(entity.timestamp)
                     val localDateTime = instant.toLocalDateTime(TimeZone.currentSystemDefault())
