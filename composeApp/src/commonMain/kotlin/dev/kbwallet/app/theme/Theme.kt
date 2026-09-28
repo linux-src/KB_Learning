@@ -95,6 +95,8 @@ internal fun KBLearningTheme(
     ) {
         MaterialTheme(
             colorScheme = colorScheme,
+            typography = kbTypography(),
+            shapes = KBShapes,
             content = content,
         )
     }
