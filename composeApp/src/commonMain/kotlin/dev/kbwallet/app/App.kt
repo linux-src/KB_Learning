@@ -1,6 +1,40 @@
 package dev.kbwallet.app
 
+import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import dev.kbwallet.app.theme.SystemBarsAppearance
+import dev.kbwallet.app.theme.mode.ThemeController
+import dev.kbwallet.app.theme.mode.ThemeMode
+import org.koin.compose.koinInject
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.safeDrawing
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.layout.Box
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideOutHorizontally
+import androidx.compose.animation.togetherWith
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.width
+import androidx.compose.material3.NavigationRail
+import androidx.compose.material3.NavigationRailItem
+import androidx.compose.material3.NavigationRailItemDefaults
+import androidx.compose.ui.unit.dp
+import dev.kbwallet.app.theme.Dimens
+import dev.kbwallet.app.theme.KBTheme
+import dev.kbwallet.app.theme.component.AppMark
+import dev.kbwallet.app.theme.component.ContentColumn
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
@@ -101,7 +135,14 @@ private fun BottomTab.label(strings: AppStrings): String = when (this) {
 fun App() {
     ProvideAppLanguage {
     val navController: NavHostController = rememberNavController()
-    KBLearningTheme {
+    val themeMode by koinInject<ThemeController>().mode.collectAsStateWithLifecycle()
+    val darkTheme = when (themeMode) {
+        ThemeMode.SYSTEM -> isSystemInDarkTheme()
+        ThemeMode.LIGHT -> false
+        ThemeMode.DARK -> true
+    }
+    KBLearningTheme(darkTheme = darkTheme) {
+        SystemBarsAppearance(darkTheme)
         // Surface (not just a painted Box/Column background) is what actually
         // provides LocalContentColor to everything below it. Without it, any
         // Text/Icon that doesn't set an explicit color falls back to Compose's
@@ -117,11 +158,28 @@ fun App() {
         // The in-app banner sits above the NavHost rather than inside any one
         // screen, so a notification raised on the trade sheet still shows after
         // the sheet closes and the user has navigated on.
-        Box(modifier = Modifier.fillMaxSize()) {
+        // Edge-to-edge: apply system bar insets once for every screen.
+        Box(modifier = Modifier.fillMaxSize().windowInsetsPadding(WindowInsets.safeDrawing)) {
         NavHost(
             navController = navController,
             startDestination = Biometric,
-            modifier = Modifier.fillMaxSize()
+            modifier = Modifier.fillMaxSize(),
+            enterTransition = {
+                fadeIn(tween(220, delayMillis = 40)) +
+                    slideInHorizontally(tween(280, easing = FastOutSlowInEasing)) { it / 8 }
+            },
+            exitTransition = {
+                fadeOut(tween(160)) +
+                    slideOutHorizontally(tween(280, easing = FastOutSlowInEasing)) { -it / 16 }
+            },
+            popEnterTransition = {
+                fadeIn(tween(220, delayMillis = 40)) +
+                    slideInHorizontally(tween(280, easing = FastOutSlowInEasing)) { -it / 16 }
+            },
+            popExitTransition = {
+                fadeOut(tween(160)) +
+                    slideOutHorizontally(tween(280, easing = FastOutSlowInEasing)) { it / 8 }
+            },
         ) {
             // ── Biometric entry ──
             composable<Biometric> {
@@ -180,65 +238,85 @@ fun App() {
 
             // ── Secondary screens (no bottom bar) ──
             composable<Coins> {
-                CoinListScreen(
-                    onCoinClicked = { coinId ->
-                        navController.navigate(CryptoChart(coinId, ""))
-                    },
-                    onChartRequested = { coinId, coinName ->
-                        navController.navigate(CryptoChart(coinId, coinName))
-                    },
-                    onBack = { navController.popBackStack() },
-                )
+                ContentColumn(maxWidth = Dimens.contentMaxWidth) {
+                    CoinListScreen(
+                        onCoinClicked = { coinId ->
+                            navController.navigate(CryptoChart(coinId, ""))
+                        },
+                        onChartRequested = { coinId, coinName ->
+                            navController.navigate(CryptoChart(coinId, coinName))
+                        },
+                        onBack = { navController.popBackStack() },
+                    )
+                }
             }
             composable<CryptoChart> { navBackStackEntry ->
                 val route = navBackStackEntry.toRoute<CryptoChart>()
-                CryptoChartScreen(
-                    coinId = route.coinId,
-                    coinName = route.coinName,
-                    onBack = { navController.popBackStack() }
-                )
+                ContentColumn(maxWidth = 1000.dp) {
+                    CryptoChartScreen(
+                        coinId = route.coinId,
+                        coinName = route.coinName,
+                        onBack = { navController.popBackStack() }
+                    )
+                }
             }
 
             // ── Profile sub-screens ──
             composable<EditProfile> {
-                EditProfileScreen(
-                    onNavigateBack = { navController.popBackStack() }
-                )
+                ContentColumn(maxWidth = Dimens.contentMaxWidth) {
+                    EditProfileScreen(
+                        onNavigateBack = { navController.popBackStack() }
+                    )
+                }
             }
             composable<NotificationSettings> {
-                NotificationSettingsScreen(
-                    onNavigateBack = { navController.popBackStack() }
-                )
+                ContentColumn(maxWidth = Dimens.contentMaxWidth) {
+                    NotificationSettingsScreen(
+                        onNavigateBack = { navController.popBackStack() }
+                    )
+                }
             }
             composable<NotificationCenter> {
-                NotificationCenterScreen(
-                    onNavigateBack = { navController.popBackStack() }
-                )
+                ContentColumn(maxWidth = Dimens.contentMaxWidth) {
+                    NotificationCenterScreen(
+                        onNavigateBack = { navController.popBackStack() }
+                    )
+                }
             }
             composable<SecuritySettings> {
-                SecuritySettingsScreen(
-                    onNavigateBack = { navController.popBackStack() }
-                )
+                ContentColumn(maxWidth = Dimens.contentMaxWidth) {
+                    SecuritySettingsScreen(
+                        onNavigateBack = { navController.popBackStack() }
+                    )
+                }
             }
             composable<HelpSupport> {
-                HelpSupportScreen(
-                    onNavigateBack = { navController.popBackStack() }
-                )
+                ContentColumn(maxWidth = Dimens.contentMaxWidth) {
+                    HelpSupportScreen(
+                        onNavigateBack = { navController.popBackStack() }
+                    )
+                }
             }
             composable<LanguageSettings> {
-                LanguageSettingsScreen(
-                    onNavigateBack = { navController.popBackStack() }
-                )
+                ContentColumn(maxWidth = Dimens.contentMaxWidth) {
+                    LanguageSettingsScreen(
+                        onNavigateBack = { navController.popBackStack() }
+                    )
+                }
             }
             composable<Sponsorship> {
-                SponsorshipScreen(
-                    onBack = { navController.popBackStack() }
-                )
+                ContentColumn(maxWidth = Dimens.contentMaxWidth) {
+                    SponsorshipScreen(
+                        onBack = { navController.popBackStack() }
+                    )
+                }
             }
 
             // ── Trading Simulator additions ──
             composable<PnLAnalytics> {
-                PnLScreen(onBack = { navController.popBackStack() })
+                ContentColumn(maxWidth = Dimens.contentMaxWidth) {
+                    PnLScreen(onBack = { navController.popBackStack() })
+                }
             }
             composable<ActiveOrders> {
                 // Active orders screen (limit orders overview)
@@ -246,22 +324,32 @@ fun App() {
                 navController.popBackStack()
             }
             composable<Simulator> {
-                SimulatorScreen(onBack = { navController.popBackStack() })
+                ContentColumn(maxWidth = 1000.dp) {
+                    SimulatorScreen(onBack = { navController.popBackStack() })
+                }
             }
 
             // ── Knowledge library ──
             composable<Library> {
-                LibraryScreen(
-                    onBack = { navController.popBackStack() },
-                    onTopicClicked = { topicId -> navController.navigate(Topic(topicId)) },
-                )
+                ContentColumn(maxWidth = Dimens.contentMaxWidth) {
+                    LibraryScreen(
+                        onBack = { navController.popBackStack() },
+                        onTopicClicked = { topicId -> navController.navigate(Topic(topicId)) },
+                    )
+                }
             }
             composable<Topic> { navBackStackEntry ->
                 val topicId: String = navBackStackEntry.toRoute<Topic>().topicId
-                LibraryTopicScreen(
-                    topicId = topicId,
-                    onBack = { navController.popBackStack() },
-                )
+                ContentColumn(maxWidth = Dimens.contentMaxWidth) {
+                    LibraryTopicScreen(
+                        topicId = topicId,
+                        onBack = { navController.popBackStack() },
+                        // Replace instead of stacking so Back returns to the list.
+                        onTopicClicked = { nextId ->
+                            navController.navigate(Topic(nextId)) { popUpTo<Topic> { inclusive = true } }
+                        },
+                    )
+                }
             }
         }
 
@@ -290,43 +378,121 @@ private fun MainScaffold(navController: NavHostController) {
     val strings = appStrings()
     var selectedTab by rememberSaveable { mutableStateOf(BottomTab.Dashboard) }
 
+    // Bottom bar on phones, side rail on wide windows.
+    BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
+        val useRail = maxWidth >= Dimens.railBreakpoint
+        Row(modifier = Modifier.fillMaxSize()) {
+            if (useRail) {
+                KBNavigationRail(selectedTab = selectedTab, onSelect = { selectedTab = it })
+            }
+            MainTabs(
+                navController = navController,
+                selectedTab = selectedTab,
+                showBottomBar = !useRail,
+                onSelect = { selectedTab = it },
+                modifier = Modifier.weight(1f),
+            )
+        }
+    }
+}
+
+@Composable
+private fun KBNavigationRail(selectedTab: BottomTab, onSelect: (BottomTab) -> Unit) {
+    val strings = appStrings()
+    Row {
+        NavigationRail(
+            containerColor = MaterialTheme.colorScheme.background,
+            header = {
+                Spacer(Modifier.height(Dimens.md))
+                AppMark(size = 44.dp)
+                Spacer(Modifier.height(Dimens.xl))
+            },
+        ) {
+            BottomTab.entries.forEach { tab ->
+                NavigationRailItem(
+                    selected = tab == selectedTab,
+                    onClick = { onSelect(tab) },
+                    icon = { Icon(tab.icon, contentDescription = null) },
+                    label = { Text(tab.label(strings), style = MaterialTheme.typography.labelMedium) },
+                    colors = NavigationRailItemDefaults.colors(
+                        selectedIconColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                        selectedTextColor = MaterialTheme.colorScheme.onSurface,
+                        unselectedIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                        unselectedTextColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                        indicatorColor = MaterialTheme.colorScheme.primaryContainer,
+                    ),
+                    modifier = Modifier.padding(vertical = Dimens.xxs),
+                )
+            }
+        }
+        Box(
+            Modifier
+                .fillMaxHeight()
+                .width(1.dp)
+                .background(KBTheme.colors.hairline)
+        )
+    }
+}
+
+@Composable
+private fun MainTabs(
+    navController: NavHostController,
+    selectedTab: BottomTab,
+    showBottomBar: Boolean,
+    onSelect: (BottomTab) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val strings = appStrings()
     Scaffold(
+        modifier = modifier,
+        containerColor = MaterialTheme.colorScheme.background,
         bottomBar = {
-            NavigationBar(
-                containerColor = MaterialTheme.colorScheme.surface,
-                contentColor = MaterialTheme.colorScheme.onSurface,
-            ) {
-                BottomTab.entries.forEach { tab ->
-                    NavigationBarItem(
-                        selected = tab == selectedTab,
-                        onClick = { selectedTab = tab },
-                        icon = {
-                            Icon(
-                                imageVector = tab.icon,
-                                contentDescription = tab.label(strings),
-                            )
-                        },
-                        label = { Text(text = tab.label(strings)) },
-                        colors = NavigationBarItemDefaults.colors(
-                            selectedIconColor = MaterialTheme.colorScheme.primary,
-                            selectedTextColor = MaterialTheme.colorScheme.primary,
-                            unselectedIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                            unselectedTextColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                            indicatorColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.15f),
-                        ),
-                    )
+            if (!showBottomBar) return@Scaffold
+            Column {
+                Box(Modifier.fillMaxWidth().height(1.dp).background(KBTheme.colors.hairline))
+                NavigationBar(
+                    containerColor = MaterialTheme.colorScheme.background,
+                    contentColor = MaterialTheme.colorScheme.onSurface,
+                    tonalElevation = 0.dp,
+                ) {
+                    BottomTab.entries.forEach { tab ->
+                        NavigationBarItem(
+                            selected = tab == selectedTab,
+                            onClick = { onSelect(tab) },
+                            icon = {
+                                Icon(
+                                    imageVector = tab.icon,
+                                    contentDescription = null,
+                                )
+                            },
+                            label = { Text(text = tab.label(strings), style = MaterialTheme.typography.labelMedium) },
+                            colors = NavigationBarItemDefaults.colors(
+                                selectedIconColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                                selectedTextColor = MaterialTheme.colorScheme.onSurface,
+                                unselectedIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                                unselectedTextColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                                indicatorColor = MaterialTheme.colorScheme.primaryContainer,
+                            ),
+                        )
+                    }
                 }
             }
         }
     ) { innerPadding ->
-        Box(modifier = Modifier.fillMaxSize().padding(innerPadding)) {
-            when (selectedTab) {
+        AnimatedContent(
+            targetState = selectedTab,
+            transitionSpec = { fadeIn(tween(180)) togetherWith fadeOut(tween(120)) },
+            modifier = Modifier.fillMaxSize().padding(innerPadding),
+            label = "tab",
+        ) { tab ->
+            ContentColumn {
+            when (tab) {
                 BottomTab.Dashboard -> DashboardScreen(
                     onDiscoverCoinsClicked = {
                         navController.navigate(Coins)
                     },
-                    onCoinItemClicked = { coinId ->
-                        navController.navigate(CryptoChart(coinId, ""))
+                    onCoinItemClicked = { coinId, coinName ->
+                        navController.navigate(CryptoChart(coinId, coinName))
                     },
                     onSimulatorClicked = {
                         navController.navigate(Simulator)
@@ -334,10 +500,14 @@ private fun MainScaffold(navController: NavHostController) {
                     onLibraryClicked = {
                         navController.navigate(Library)
                     },
+                    onAnalyticsClicked = {
+                        navController.navigate(PnLAnalytics)
+                    },
+                    onSeeAllAssetsClicked = { onSelect(BottomTab.Portfolio) },
                 )
                 BottomTab.Portfolio -> PortfolioScreen(
-                    onCoinItemClicked = { coinId ->
-                        navController.navigate(CryptoChart(coinId, ""))
+                    onCoinItemClicked = { coinId, coinName ->
+                        navController.navigate(CryptoChart(coinId, coinName))
                     },
                     onDiscoverCoinsClicked = {
                         navController.navigate(Coins)
@@ -370,6 +540,7 @@ private fun MainScaffold(navController: NavHostController) {
                         navController.navigate(Sponsorship)
                     },
                 )
+            }
             }
         }
     }
