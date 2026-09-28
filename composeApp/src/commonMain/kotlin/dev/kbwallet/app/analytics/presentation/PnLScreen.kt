@@ -1,5 +1,7 @@
 package dev.kbwallet.app.analytics.presentation
 
+import dev.kbwallet.app.theme.component.BackHeader
+import dev.kbwallet.app.theme.component.SkeletonList
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -45,22 +47,10 @@ fun PnLScreen(onBack: () -> Unit) {
     Column(
         modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)
     ) {
-        // Header
-        Row(
-            modifier = Modifier.fillMaxWidth().padding(16.dp, 8.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            IconButton(onClick = onBack, modifier = Modifier.size(36.dp)) {
-                Icon(Icons.Default.ArrowBack, strings.actionBack, tint = MaterialTheme.colorScheme.onSurfaceVariant)
-            }
-            Spacer(Modifier.width(8.dp))
-            Text(strings.pnlTitle, style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)
-        }
+        BackHeader(title = strings.pnlTitle, onBack = onBack)
 
         if (state.isLoading) {
-            Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxSize()) {
-                CircularProgressIndicator(color = MaterialTheme.colorScheme.primary, modifier = Modifier.size(32.dp))
-            }
+            SkeletonList(rows = 4, header = false)
         } else {
             LazyColumn(
                 modifier = Modifier.fillMaxSize().padding(horizontal = 16.dp),

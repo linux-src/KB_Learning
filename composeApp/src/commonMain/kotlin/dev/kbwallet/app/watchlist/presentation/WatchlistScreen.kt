@@ -1,5 +1,9 @@
 package dev.kbwallet.app.watchlist.presentation
 
+import dev.kbwallet.app.theme.component.BackHeader
+import dev.kbwallet.app.theme.component.SkeletonList
+import dev.kbwallet.app.theme.component.CoinAvatar
+import dev.kbwallet.app.theme.Dimens
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -55,27 +59,10 @@ fun WatchlistScreen(
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.background)
     ) {
-        // ── Header ──
-        Row(
-            modifier = Modifier.fillMaxWidth().padding(16.dp, 8.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            IconButton(onClick = onBack, modifier = Modifier.size(36.dp)) {
-                Icon(Icons.Default.ArrowBack, strings.actionBack, tint = MaterialTheme.colorScheme.onSurfaceVariant)
-            }
-            Spacer(Modifier.width(8.dp))
-            Text(
-                text = strings.watchlistTitle,
-                style = MaterialTheme.typography.headlineMedium,
-                fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.onBackground,
-            )
-        }
+        BackHeader(title = strings.watchlistTitle, onBack = onBack)
 
         if (state.isLoading) {
-            Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxSize()) {
-                CircularProgressIndicator(color = MaterialTheme.colorScheme.primary, modifier = Modifier.size(32.dp))
-            }
+            SkeletonList(rows = 5, header = false)
         } else if (state.items.isEmpty()) {
             Box(
                 contentAlignment = Alignment.Center,
@@ -118,21 +105,12 @@ private fun WatchlistRow(
         verticalAlignment = Alignment.CenterVertically,
         modifier = Modifier
             .fillMaxWidth()
-            .background(MaterialTheme.colorScheme.surface, RoundedCornerShape(16.dp))
+            .clip(RoundedCornerShape(Dimens.cardRadius))
+            .background(MaterialTheme.colorScheme.surface)
             .clickable(onClick = onClick)
             .padding(14.dp)
     ) {
-        Box(
-            modifier = Modifier.size(44.dp).background(Color(0xFF2A2A2A), CircleShape).padding(6.dp),
-            contentAlignment = Alignment.Center,
-        ) {
-            AsyncImage(
-                model = item.iconUrl,
-                contentDescription = null,
-                contentScale = ContentScale.Fit,
-                modifier = Modifier.clip(CircleShape).size(32.dp),
-            )
-        }
+        CoinAvatar(iconUrl = item.iconUrl, symbol = item.symbol)
         Spacer(Modifier.width(12.dp))
         Column(modifier = Modifier.weight(1f)) {
             Text(

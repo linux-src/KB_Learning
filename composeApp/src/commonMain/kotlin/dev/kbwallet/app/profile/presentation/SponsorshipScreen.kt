@@ -1,5 +1,8 @@
 package dev.kbwallet.app.profile.presentation
 
+import dev.kbwallet.app.theme.KBTheme
+import androidx.compose.material3.MaterialTheme
+import dev.kbwallet.app.theme.component.BackHeader
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -29,15 +32,9 @@ fun SponsorshipScreen(
     val scrollState = rememberScrollState()
 
     Scaffold(
+        containerColor = MaterialTheme.colorScheme.background,
         topBar = {
-            TopAppBar(
-                title = { Text(strings.sponsorshipTitle, fontWeight = FontWeight.SemiBold) },
-                navigationIcon = {
-                    IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = strings.actionBack)
-                    }
-                }
-            )
+            BackHeader(title = strings.sponsorshipTitle, onBack = onBack)
         }
     ) { padding ->
         Column(
@@ -51,7 +48,7 @@ fun SponsorshipScreen(
             Icon(
                 imageVector = Icons.Default.Favorite,
                 contentDescription = null,
-                tint = MaterialTheme.colorScheme.primary,
+                tint = KBTheme.colors.lossRed,
                 modifier = Modifier
                     .size(64.dp)
                     .padding(bottom = 16.dp)
@@ -84,7 +81,7 @@ fun SponsorshipScreen(
             Spacer(modifier = Modifier.height(32.dp))
             
             Text(
-                text = "You can also support us by leaving a 5-star review or sharing the app with your friends!",
+                text = strings.sponsorshipFooter,
                 style = MaterialTheme.typography.bodySmall,
                 textAlign = TextAlign.Center,
                 color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)

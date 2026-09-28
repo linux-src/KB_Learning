@@ -1,5 +1,12 @@
 package dev.kbwallet.app.profile.presentation
 
+import androidx.compose.foundation.layout.PaddingValues
+import dev.kbwallet.app.theme.component.KBCard
+import dev.kbwallet.app.theme.component.MenuRow
+import dev.kbwallet.app.theme.Dimens
+import dev.kbwallet.app.theme.component.SettingsSectionLabel
+import dev.kbwallet.app.theme.component.ToggleCard
+import dev.kbwallet.app.theme.component.BackHeader
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -62,28 +69,9 @@ fun SecuritySettingsScreen(
     val strings = appStrings()
 
     Scaffold(
+        containerColor = MaterialTheme.colorScheme.background,
         topBar = {
-            TopAppBar(
-                title = {
-                    Text(
-                        text = strings.securityTitle,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.onBackground,
-                    )
-                },
-                navigationIcon = {
-                    IconButton(onClick = onNavigateBack) {
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = strings.actionBack,
-                            tint = MaterialTheme.colorScheme.onBackground,
-                        )
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.background,
-                ),
-            )
+            BackHeader(title = strings.securityTitle, onBack = onNavigateBack)
         }
     ) { innerPadding ->
         LazyColumn(
@@ -91,8 +79,8 @@ fun SecuritySettingsScreen(
                 .fillMaxSize()
                 .background(MaterialTheme.colorScheme.background)
                 .padding(innerPadding)
-                .padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
+                .padding(horizontal = Dimens.screenPadding, vertical = Dimens.xs),
+            verticalArrangement = Arrangement.spacedBy(Dimens.xs)
         ) {
             // ── AUTHENTICATION ──
             item {
@@ -123,29 +111,11 @@ fun SecuritySettingsScreen(
                 SectionHeader(strings.sectionAccount)
             }
             item {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .background(
-                            MaterialTheme.colorScheme.surface,
-                            RoundedCornerShape(16.dp)
-                        )
-                        .clickable { showPasswordDialog = true }
-                        .padding(16.dp)
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Lock,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.size(24.dp),
-                    )
-                    Spacer(modifier = Modifier.width(16.dp))
-                    Text(
-                        text = strings.securityChangePassword,
-                        style = MaterialTheme.typography.titleSmall,
-                        fontWeight = FontWeight.SemiBold,
-                        color = MaterialTheme.colorScheme.onBackground,
+                KBCard(modifier = Modifier.fillMaxWidth(), contentPadding = PaddingValues(0.dp)) {
+                    MenuRow(
+                        icon = Icons.Default.Lock,
+                        title = strings.securityChangePassword,
+                        onClick = { showPasswordDialog = true },
                     )
                 }
             }
@@ -241,15 +211,7 @@ private fun ChangePasswordDialog(
 }
 
 @Composable
-private fun SectionHeader(title: String) {
-    Text(
-        text = title,
-        style = MaterialTheme.typography.titleMedium,
-        fontWeight = FontWeight.Bold,
-        color = MaterialTheme.colorScheme.primary,
-        modifier = Modifier.padding(vertical = 4.dp),
-    )
-}
+private fun SectionHeader(title: String) = SettingsSectionLabel(title)
 
 @Composable
 private fun ToggleItem(
@@ -258,47 +220,4 @@ private fun ToggleItem(
     subtitle: String,
     checked: Boolean,
     onToggle: () -> Unit,
-) {
-    Row(
-        verticalAlignment = Alignment.CenterVertically,
-        modifier = Modifier
-            .fillMaxWidth()
-            .background(
-                MaterialTheme.colorScheme.surface,
-                RoundedCornerShape(16.dp)
-            )
-            .padding(16.dp)
-    ) {
-        Icon(
-            imageVector = icon,
-            contentDescription = null,
-            tint = MaterialTheme.colorScheme.primary,
-            modifier = Modifier.size(24.dp),
-        )
-        Spacer(modifier = Modifier.width(16.dp))
-        Column(modifier = Modifier.weight(1f)) {
-            Text(
-                text = title,
-                style = MaterialTheme.typography.titleSmall,
-                fontWeight = FontWeight.SemiBold,
-                color = MaterialTheme.colorScheme.onBackground,
-            )
-            Text(
-                text = subtitle,
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-        }
-        Switch(
-            checked = checked,
-            onCheckedChange = { onToggle() },
-            colors = SwitchDefaults.colors(
-                checkedThumbColor = MaterialTheme.colorScheme.primary,
-                checkedTrackColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.3f),
-                uncheckedThumbColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                uncheckedTrackColor = MaterialTheme.colorScheme.surfaceVariant,
-                uncheckedBorderColor = MaterialTheme.colorScheme.onSurfaceVariant,
-            ),
-        )
-    }
-}
+) = ToggleCard(icon = icon, title = title, subtitle = subtitle, checked = checked, onToggle = onToggle)

@@ -1,5 +1,6 @@
 package dev.kbwallet.app.notifications.presentation
 
+import dev.kbwallet.app.theme.component.BackHeader
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -65,25 +66,9 @@ fun NotificationCenterScreen(
     LaunchedEffect(Unit) { viewModel.refreshSystemPermission() }
 
     Scaffold(
+        containerColor = MaterialTheme.colorScheme.background,
         topBar = {
-            TopAppBar(
-                title = {
-                    Text(
-                        text = strings.notificationsTitle,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.onBackground,
-                    )
-                },
-                navigationIcon = {
-                    IconButton(onClick = onNavigateBack) {
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = strings.actionBack,
-                            tint = MaterialTheme.colorScheme.onBackground,
-                        )
-                    }
-                },
-                actions = {
+            BackHeader(title = strings.profileMenuNotificationCenterTitle, onBack = onNavigateBack, actions = {
                     if (state.notifications.isNotEmpty()) {
                         IconButton(onClick = { viewModel.markAllRead() }) {
                             Icon(
@@ -100,11 +85,7 @@ fun NotificationCenterScreen(
                             )
                         }
                     }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.background,
-                ),
-            )
+                })
         }
     ) { innerPadding ->
         Column(
